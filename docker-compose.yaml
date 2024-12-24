@@ -1,0 +1,19 @@
+name: pm25-test
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: PM25-db_test
+    ports:
+      - 5432:${POSTGRES_PORT}
+    volumes:
+      - PM25-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - PM25-net
+volumes:
+  PM25-data:
+networks:
+  PM25-net:

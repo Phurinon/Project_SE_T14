@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model USERS {
+  user_id     Int      @id @default(autoincrement())
+  username    String
+  email       String   @unique
+  password    String
+  role        String   @default("user")
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  uploaded_at DateTime @updatedAt
+  REVIEWS     REVIEW[] @relation("UserReviews")
+}
+
+model REVIEW {
+  review_id  Int      @id @default(autoincrement())
+  rating     Int
+  comment    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user_id    Int
+  USERS      USERS    @relation("UserReviews", fields: [user_id], references: [user_id])
+  shop_id    Int
+  SHOP       SHOP     @relation(fields: [shop_id], references: [shop_id])
+}
+
+model SHOP {
+  shop_id     Int      @id @default(autoincrement())
+  shop_name   String
+  address     String
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  LOCATION    LOCATION @relation(fields: [location_id], references: [location_id])
+  location_id Int
+  REVIEWS     REVIEW[]
+  IMAGE       IMAGE[]
+}
+
+model LOCATION {
+  location_id   Int           @id @default(autoincrement())
+  location_name String
+  coordinates   String
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  SHOP          SHOP[]
+  pm_Location   PM_LOCATION[]
+}
+
+model IMAGE {
+  id         Int      @id @default(autoincrement())
+  asset_id   String
+  public_id  String
+  url        String
+  secure_url String
+  createdAt  DateTime @default(now())
+  shop_id    Int
+  SHOP       SHOP     @relation(fields: [shop_id], references: [shop_id])
+}
+
+model PM_LOCATION {
+  id          Int       @id @default(autoincrement())
+  pm_id       Int
+  location_id Int
+  PM25_DATA   PM25_DATA @relation(fields: [pm_id], references: [pm_id])
+  LOCATION    LOCATION  @relation(fields: [location_id], references: [location_id])
+}
+
+model PM25_DATA {
+  pm_id         Int           @id @default(autoincrement())
+  pm_value      Float
+  recorded_at   DateTime      @default(now())
+  SAFETY_LEVELS SAFETY_LEVELS @relation(fields: [level_id], references: [level_id])
+  level_id      Int
+  PM_LOCATION   PM_LOCATION[]
+}
+
+model SAFETY_LEVELS {
+  level_id        Int               @id @default(autoincrement())
+  level_name      String
+  description     String
+  threshold_pm    Float
+  RECOMMENDATIONS RECOMMENDATIONS[]
+  PM25_DATA       PM25_DATA[]
+}
+
+model RECOMMENDATIONS {
+  recommendation_id Int           @id @default(autoincrement())
+  level_id          Int
+  description       String
+  create_id         String
+  updated_id        String
+  SAFETY_LEVELS     SAFETY_LEVELS @relation(fields: [level_id], references: [level_id])
+}
