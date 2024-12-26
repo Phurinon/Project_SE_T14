@@ -1,5 +1,5 @@
 
-export default function Manage() {
+export default function UserManage() {
   return (
     <div>Manage</div>
   )

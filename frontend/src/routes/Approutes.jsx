@@ -5,9 +5,12 @@ import Login from '../pages/Auth/Login';
 import Layout from '../layouts/Layout';
 import AdminLayout from '../layouts/AdminLayout';
 import Dashboard from '../pages/admin/Dashboard';
-import Manage from '../pages/admin/Manage';
 import HomeUser from '../pages/user/HomeUser';
 import UserLayout from '../layouts/UserLayout';
+import Content from '../pages/admin/Content';
+import Safety from '../pages/admin/Safety';
+import Recommendation from '../pages/admin/Recommendation';
+import UserManage from '../pages/admin/USerManage';
 
 const router = createBrowserRouter([
     // landing
@@ -26,7 +29,10 @@ const router = createBrowserRouter([
         element: <AdminLayout />,
         children: [
             {index: true, element: <Dashboard />},
-            {path: 'manage', element: <Manage />},
+            {path: 'manage', element: <UserManage />},
+            {path: 'content', element: <Content />},
+            {path: 'safety', element: <Safety />},
+            {path: 'recommendation', element: <Recommendation />},
         ]
     },
     {
