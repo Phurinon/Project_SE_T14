@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,95 +7,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model USERS {
-  user_id     Int      @id @default(autoincrement())
-  username    String
-  email       String   @unique
-  password    String
-  role        String   @default("user")
-  is_active   Boolean  @default(true)
-  created_at  DateTime @default(now())
-  uploaded_at DateTime @updatedAt
-  REVIEWS     REVIEW[] @relation("UserReviews")
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("user") // user, store, admin
+  status    String    @default("pending") // active, pending, inactive
+  createdAt DateTime  @default(now())
+  // คิดว่าน่าจะต้องเพิ่มตรงนี้
+  shop      Shop? // User can have a shop
+  reviews   Review[] // User can have reviews
+  comments  Comment[] // User can have comments
 }
 
-model REVIEW {
-  review_id  Int      @id @default(autoincrement())
-  rating     Int
-  comment    String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  user_id    Int
-  USERS      USERS    @relation("UserReviews", fields: [user_id], references: [user_id])
-  shop_id    Int
-  SHOP       SHOP     @relation(fields: [shop_id], references: [shop_id])
+model Shop {
+  id          Int          @id @default(autoincrement())
+  name        String
+  // ? คือ optional
+  address     String?
+  description String? // ให้ร้านอธิบายเกี่ยวกับร้านของตัวเอง
+  phone       String?
+  email       String?
+  openTime    String?
+  closeTime   String?
+  latitude    Float? // ระบุละติจูดของตำแหน่งร้าน
+  longitude   Float? // ระบุลองจิจูดของตำแหน่งร้าน
+  userId      Int          @unique
+  user        User         @relation(fields: [userId], references: [id])
+  reviews     Review[] // ร้านสามารถมี review ได้หลายคน
+  images      Image[] // ร้านสามารถมีรูปได้หลายรูป
+  comments    Comment[] // ร้านสามารถมี comment ได้หลายคน
+  safetyLevel SafetyLevel? // ร้านควรมี safety level เพียงค่าเดียว
+  type        String       @default("ที่กิน")
+  rating      Float        @default(0) // คะแนนร้าน
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
-model SHOP {
-  shop_id     Int      @id @default(autoincrement())
-  shop_name   String
-  address     String
-  is_active   Boolean  @default(true)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-  LOCATION    LOCATION @relation(fields: [location_id], references: [location_id])
-  location_id Int
-  REVIEWS     REVIEW[]
-  IMAGE       IMAGE[]
+model Review {
+  id        Int      @id @default(autoincrement())
+  content   String // ความคิดเห็น
+  rating    Int
+  comment   String
+  status    String   @default("pending") // pending, approved, rejected
+  userId    Int
+  shopId    Int
+  likes      Int        @default(0)  // จำนวนไลค์
+  reply     String? // ตอบกลับจากร้าน
+  reported  Boolean  @default(false) // รายงานรีวิว
+  reason    String? // สาเหตุที่รายงาน
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  shop      Shop     @relation(fields: [shopId], references: [id])
 }
 
-model LOCATION {
-  location_id   Int           @id @default(autoincrement())
-  location_name String
-  coordinates   String
-  created_at    DateTime      @default(now())
-  updated_at    DateTime      @updatedAt
-  SHOP          SHOP[]
-  pm_Location   PM_LOCATION[]
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String // ความคิดเห็น
+  status    String   @default("pending") // pending, approved, rejected
+  userId    Int
+  shopId    Int
+  reported  Boolean  @default(false)
+  reason    String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  shop      Shop     @relation(fields: [shopId], references: [id])
 }
 
-model IMAGE {
+model Image {
   id         Int      @id @default(autoincrement())
-  asset_id   String
-  public_id  String
-  url        String
-  secure_url String
+  asset_id   String   // ID ของรูปภาพจาก cloud storage
+  public_id  String   // Public ID จาก cloud storage
+  url        String   // URL ปกติของรูปภาพ
+  secure_url String   // HTTPS URL ของรูปภาพ
+  shopId     Int      // Foreign key ไปยัง Shop
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
-  shop_id    Int
-  SHOP       SHOP     @relation(fields: [shop_id], references: [shop_id])
+  updatedAt  DateTime @updatedAt
 }
 
-model PM_LOCATION {
-  id          Int       @id @default(autoincrement())
-  pm_id       Int
-  location_id Int
-  PM25_DATA   PM25_DATA @relation(fields: [pm_id], references: [pm_id])
-  LOCATION    LOCATION  @relation(fields: [location_id], references: [location_id])
-}
-
-model PM25_DATA {
-  pm_id         Int           @id @default(autoincrement())
-  pm_value      Float
-  recorded_at   DateTime      @default(now())
-  SAFETY_LEVELS SAFETY_LEVELS @relation(fields: [level_id], references: [level_id])
-  level_id      Int
-  PM_LOCATION   PM_LOCATION[]
-}
-
-model SAFETY_LEVELS {
-  level_id        Int               @id @default(autoincrement())
-  level_name      String
-  description     String
-  threshold_pm    Float
-  RECOMMENDATIONS RECOMMENDATIONS[]
-  PM25_DATA       PM25_DATA[]
-}
-
-model RECOMMENDATIONS {
-  recommendation_id Int           @id @default(autoincrement())
-  level_id          Int
-  description       String
-  create_id         String
-  updated_id        String
-  SAFETY_LEVELS     SAFETY_LEVELS @relation(fields: [level_id], references: [level_id])
+model SafetyLevel {
+  id          Int      @id @default(autoincrement())
+  label       String
+  maxValue    Float
+  color       String
+  description String
+  shopId      Int      @unique // ร้านควรมี safety level เพียงค่าเดียว
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
