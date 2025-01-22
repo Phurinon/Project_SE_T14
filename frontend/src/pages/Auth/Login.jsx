@@ -46,7 +46,7 @@ export default function Login() {
     } else if (role === "store") {
       navigate("/shop");
     } else {
-      navigate("/");
+      navigate("/user");
     }
   };
   return (

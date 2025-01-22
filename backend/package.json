@@ -20,7 +20,9 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.1.0",
+    "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.5.1",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",

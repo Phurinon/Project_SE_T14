@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   LogOut,
 } from "lucide-react";
+import useDusthStore from "../../Global Store/DusthStore";
 
 const menuItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +17,13 @@ const menuItems = [
 
 export default function SidebarAdmin() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const logout = useDusthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <div className="relative">
@@ -30,7 +38,6 @@ export default function SidebarAdmin() {
           <span className="text-lg font-bold text-white">AdminPanel</span>
         </Link>
 
-        {/* Menu Items */}
         <ul className="mt-6 space-y-2">
           {menuItems.map((item, index) => {
             const isActive = location.pathname === item.path;
@@ -38,7 +45,7 @@ export default function SidebarAdmin() {
               <li key={index}>
                 <Link
                   to={item.path}
-                  className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200
+                  className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200 
                     ${
                       isActive
                         ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-purple-500/30"
@@ -49,19 +56,18 @@ export default function SidebarAdmin() {
                   <span className="font-medium">{item.label}</span>
                 </Link>
               </li>
-            )
+            );
           })}
         </ul>
 
-        {/* Logout Section */}
         <div className="absolute bottom-4 left-4 right-4">
-          <Link
-            to="/"
-            className="flex items-center py-3 px-4 text-purple-100 hover:bg-pink-500/20 hover:text-pink-300 rounded-lg transition-all duration-200"
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full py-3 px-4 text-purple-100 hover:bg-pink-500/20 hover:text-pink-300 rounded-lg transition-all duration-200"
           >
             <LogOut className="w-5 h-5 mr-3" />
             <span className="font-medium">ออกจากระบบ</span>
-          </Link>
+          </button>
         </div>
       </div>
     </div>

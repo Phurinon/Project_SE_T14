@@ -38,7 +38,6 @@ model Shop {
   reviews     Review[] // ร้านสามารถมี review ได้หลายคน
   images      Image[] // ร้านสามารถมีรูปได้หลายรูป
   comments    Comment[] // ร้านสามารถมี comment ได้หลายคน
-  safetyLevel SafetyLevel? // ร้านควรมี safety level เพียงค่าเดียว
   type        String       @default("ที่กิน")
   rating      Float        @default(0) // คะแนนร้าน
   createdAt   DateTime     @default(now())
@@ -53,7 +52,7 @@ model Review {
   status    String   @default("pending") // pending, approved, rejected
   userId    Int
   shopId    Int
-  likes      Int        @default(0)  // จำนวนไลค์
+  likes     Int      @default(0) // จำนวนไลค์
   reply     String? // ตอบกลับจากร้าน
   reported  Boolean  @default(false) // รายงานรีวิว
   reason    String? // สาเหตุที่รายงาน
@@ -77,11 +76,11 @@ model Comment {
 
 model Image {
   id         Int      @id @default(autoincrement())
-  asset_id   String   // ID ของรูปภาพจาก cloud storage
-  public_id  String   // Public ID จาก cloud storage
-  url        String   // URL ปกติของรูปภาพ
-  secure_url String   // HTTPS URL ของรูปภาพ
-  shopId     Int      // Foreign key ไปยัง Shop
+  asset_id   String // ID ของรูปภาพจาก cloud storage
+  public_id  String // Public ID จาก cloud storage
+  url        String // URL ปกติของรูปภาพ
+  secure_url String // HTTPS URL ของรูปภาพ
+  shopId     Int // Foreign key ไปยัง Shop
   shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -90,11 +89,9 @@ model Image {
 model SafetyLevel {
   id          Int      @id @default(autoincrement())
   label       String
-  maxValue    Float
+  maxValue    Int
   color       String
   description String
-  shopId      Int      @unique // ร้านควรมี safety level เพียงค่าเดียว
-  shop        Shop     @relation(fields: [shopId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

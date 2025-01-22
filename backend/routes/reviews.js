@@ -10,12 +10,13 @@ router.get('/shop/:shopId', async (req, res) => {
     const reviews = await prisma.review.findMany({
       where: {
         shopId: parseInt(req.params.shopId),
-        status: 'approved'
       },
       include: {
         user: {
           select: {
-            name: true
+            id: true,
+            name: true,
+            email: true
           }
         }
       },
@@ -33,18 +34,6 @@ router.get('/shop/:shopId', async (req, res) => {
 router.post('/', authenticateUser, async (req, res) => {
   try {
     const { content, rating, comment, shopId } = req.body;
-    
-    // Check if user already reviewed this shop
-    const existingReview = await prisma.review.findFirst({
-      where: {
-        userId: req.user.id,
-        shopId: parseInt(shopId)
-      }
-    });
-
-    if (existingReview) {
-      return res.status(400).json({ message: 'You have already reviewed this shop' });
-    }
 
     const review = await prisma.review.create({
       data: {
@@ -144,5 +133,50 @@ router.post('/:id/reply', authenticateUser, async (req, res) => {
     res.status(500).json({ message: 'Error replying to review' });
   }
 });
+
+// เพิ่มไลค์ให้รีวิว
+router.post('/like/:id', authenticateUser, async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+
+    const review = await prisma.review.update({
+      where: { id: reviewId },
+      data: {
+        likes: {
+          increment: 1, // เพิ่มจำนวนไลค์ทีละ 1
+        },
+      },
+    });
+
+    res.status(200).json({ message: 'Liked successfully', review });
+  } catch (error) {
+    res.status(500).json({ message: 'Error liking review' });
+  }
+});
+
+// รายงานรีวิว
+router.post('/report/:id', authenticateUser, async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ message: 'Reason for reporting is required' });
+    }
+
+    const review = await prisma.review.update({
+      where: { id: reviewId },
+      data: {
+        reported: true,
+        reason,
+      },
+    });
+
+    res.status(200).json({ message: 'Reported successfully', review });
+  } catch (error) {
+    res.status(500).json({ message: 'Error reporting review' });
+  }
+});
+
 
 module.exports = router;

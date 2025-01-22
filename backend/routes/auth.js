@@ -2,7 +2,11 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma.js");
-const { authenticateUser, adminCheck, storeCheck } = require("../middleware/auth.js");
+const {
+  authenticateUser,
+  adminCheck,
+  storeCheck,
+} = require("../middleware/auth.js");
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
@@ -73,6 +77,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Password doesn't match" });
     }
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { status: "active" },
+    });
+
     const payload = {
       id: user.id,
       email: user.email,
@@ -108,7 +117,7 @@ router.get("/current-user", authenticateUser, async (req, res) => {
         role: true,
       },
     });
-    
+
     res.json(user);
   } catch (error) {
     console.error(error);
@@ -116,7 +125,7 @@ router.get("/current-user", authenticateUser, async (req, res) => {
   }
 });
 
-router.get("/current-admin", authenticateUser,  adminCheck, async (req, res) => {
+router.get("/current-admin", authenticateUser, adminCheck, async (req, res) => {
   try {
     const admin = await prisma.user.findUnique({
       where: { email: req.user.email },

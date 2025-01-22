@@ -74,13 +74,6 @@ router.post("/", authenticateUser, async (req, res) => {
       return res.status(404).json({ message: "Shop not found" });
     }
 
-    // Check if user is active
-    if (req.user.status !== "active") {
-      return res.status(403).json({
-        message: "Your account must be active to post comments",
-      });
-    }
-
     const comment = await prisma.comment.create({
       data: {
         content: validatedData.content,

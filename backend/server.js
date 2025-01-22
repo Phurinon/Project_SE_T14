@@ -10,15 +10,21 @@ const reviewRoutes = require('./routes/reviews.js');
 const commentRoutes = require('./routes/comments.js');
 const safetyLevelRoutes = require('./routes/safetyLevels.js');
 const adminRoutes = require('./routes/admin.js');
+const airRoutes = require('./routes/Air.js');
 
 //Middleware
 app.use(morgan("dev"));
-app.use(express.json());
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Authorization', 'Content-Type'],
+  credentials: true,
 }));
+
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -28,6 +34,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/safety-levels', safetyLevelRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/air', airRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

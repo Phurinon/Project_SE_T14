@@ -33,29 +33,6 @@ router.get("/allusers", authenticateUser, async (req, res) => {
   }
 });
 
-// get user by id
-router.get("/:id", authenticateUser, async (req, res) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: Number(req.params.id) },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(user);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Error fetching user" });
-  }
-});
-
 router.put("/update", authenticateUser, async (req, res) => {
   try {
     const { name, email, password, currentPassword } = req.body;

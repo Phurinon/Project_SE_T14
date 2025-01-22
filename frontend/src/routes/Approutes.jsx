@@ -10,7 +10,7 @@ import UserLayout from "../layouts/UserLayout";
 import Content from "../pages/admin/Content";
 import Safety from "../pages/admin/Safety";
 import UserManage from "../pages/admin/USerManage";
-import Shopdetail from "../pages/Shopdetail";
+import Shopdetail from "../pages/user/Shopdetail";
 import ShopLayout from "../layouts/ShopLayout";
 import ShopDashboard from "../pages/shop/ShopDashboard";
 import Profile from "../pages/shop/Profile";
@@ -18,6 +18,7 @@ import Reviews from "../pages/shop/Reviews";
 import ProtectRouteUser from "./ProtectRouteUser";
 import ProtectRouteShop from "./ProtectRouteShop";
 import ProtectRouteAdmin from "./ProtectRouteAdmin";
+import CreateShop from "../pages/user/CreateShop";
 
 const router = createBrowserRouter([
   // landing
@@ -26,7 +27,6 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: "shop/:id", element: <Shopdetail /> },
       { path: "register", element: <Register /> },
       { path: "login", element: <Login /> },
     ],
@@ -54,7 +54,11 @@ const router = createBrowserRouter([
   {
     path: "/user",
     element: <ProtectRouteUser element={<UserLayout />} />,
-    children: [{ index: true, element: <HomeUser /> }],
+    children: [
+      { index: true, element: <HomeUser /> },
+      { path: "shop/:id", element: <Shopdetail /> },
+      { path: "create-shop", element: <CreateShop /> },
+    ],
   },
 ]);
 

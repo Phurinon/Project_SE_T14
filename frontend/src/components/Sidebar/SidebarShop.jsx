@@ -1,10 +1,6 @@
-import { Link, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  MessageSquare, 
-  LogOut, 
-  Store,
-} from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LayoutDashboard, MessageSquare, LogOut, Store } from "lucide-react";
+import useDusthStore from "../../Global Store/DusthStore";
 
 const menuItems = [
   { path: "/shop", label: "Dashboard", icon: LayoutDashboard },
@@ -14,6 +10,13 @@ const menuItems = [
 
 export default function SidebarShop() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const logout = useDusthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <div className="relative">
@@ -30,39 +33,40 @@ export default function SidebarShop() {
         </Link>
 
         {/* Menu Items */}
-        <div className="mt-6">
-          <ul className="space-y-2">
-            {menuItems.map((item, index) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <li key={index}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200
+        <ul className="mt-6 space-y-2">
+          {menuItems.map((item, index) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <li key={index}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center py-3 px-4 rounded-lg transition-all duration-200
                       ${
                         isActive
                           ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20"
                           : "text-slate-300 hover:bg-slate-800 hover:text-white"
                       }`}
-                  >
-                    <item.icon className={`w-5 h-5 mr-3 ${isActive ? "animate-pulse" : ""}`} />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+                >
+                  <item.icon
+                    className={`w-5 h-5 mr-3 ${
+                      isActive ? "animate-pulse" : ""
+                    }`}
+                  />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
 
-        {/* User Profile */}
         <div className="absolute bottom-4 left-4 right-4">
-          <Link
-            to="/"
-            className="mt-2 flex items-center py-2.5 px-4 text-slate-300 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-all duration-200"
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full py-3 px-4 text-purple-100 hover:bg-pink-500/20 hover:text-pink-300 rounded-lg transition-all duration-200"
           >
             <LogOut className="w-5 h-5 mr-3" />
             <span className="font-medium">ออกจากระบบ</span>
-          </Link>
+          </button>
         </div>
       </div>
     </div>

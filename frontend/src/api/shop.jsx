@@ -8,6 +8,15 @@ export const getAllShops = async () => {
   return response.data;
 };
 
+export const getMyShop = async (token) => {
+  const response = await axios.get(`${API}/shops/my-shop`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return response.data;
+};
+
 // Get shop by ID
 export const getShopById = async (id) => {
   const response = await axios.get(`${API}/shops/${id}`);
@@ -30,6 +39,7 @@ export const updateShop = async (id, shopData, token) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    withCredentials: true,
   });
   return response.data;
 };
@@ -41,5 +51,32 @@ export const deleteShop = async (id, token) => {
       Authorization: `Bearer ${token}`,
     },
   });
+  return response.data;
+};
+
+export const createShopImages = async (image, token) => {
+  const response = await axios.post(
+    `${API}/shops/createImages`,
+    { image },
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    }
+  );
+  return response.data;
+};
+
+export const deleteShopImages = async (public_id, token) => {
+  const response = await axios.delete(
+    `${API}/shops/removeImage`,
+    {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      data: { public_id }
+    }
+  );
   return response.data;
 };
