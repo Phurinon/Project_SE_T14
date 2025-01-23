@@ -102,3 +102,33 @@ export const calculateAverageRating = (reviews) => {
   const sum = reviews.reduce((acc, review) => acc + review.rating, 0);
   return Number((sum / reviews.length).toFixed(1));
 };
+
+export const getReportedReviews = async (token) => {
+  const response = await axios.get(`${API}/reviews/reported`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const moderateReview = async (token, reviewId, status) => {
+  const validStatuses = ["pending", "approved", "rejected"];
+
+  if (!validStatuses.includes(status)) {
+    throw new Error(
+      `Invalid status. Must be one of: ${validStatuses.join(", ")}`
+    );
+  }
+
+  const response = await axios.put(
+    `${API}/reviews/${reviewId}/moderate`,
+    { status },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
