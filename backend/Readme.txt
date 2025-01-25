@@ -1,10 +1,19 @@
 -----------Server---------------
 #Step 1
-npm init -y
 npm install express morgan cors nodemon bcryptjs jsonwebtoken
 
 #Step 2
 docker compose up -d
+
+docker exec -it PM25-db_test bash
+psql -U PM25_postgres -d mydb
+REVOKE CONNECT ON DATABASE mydb FROM public;
+    REVOKE ALL ON SCHEMA public FROM PUBLIC;
+    CREATE USER appuser WITH PASSWORD '1234';
+    CREATE SCHEMA drizzle;
+    GRANT ALL ON DATABASE mydb TO appuser;
+    GRANT ALL ON SCHEMA public TO appuser;
+    GRANT ALL ON SCHEMA drizzle TO appuser;
 
 #Step 3
 npm install prisma
