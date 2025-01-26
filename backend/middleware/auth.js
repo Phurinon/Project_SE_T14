@@ -28,9 +28,26 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Access Denied" });
+  }
+
+  try {
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified; // เก็บข้อมูลผู้ใช้ใน req.user
+    next();
+  } catch (err) {
+    res.status(403).json({ message: "Invalid Token" });
+  }
+};
+
 const adminCheck = async (req, res, next) => {
   try {
-    const  email  = req.user.email;
+    const email = req.user.email;
     const adminUser = await prisma.user.findFirst({
       where: { email: email },
     });
@@ -47,7 +64,7 @@ const adminCheck = async (req, res, next) => {
 
 const storeCheck = async (req, res, next) => {
   try {
-    const  email  = req.user.email;
+    const email = req.user.email;
     const storeUser = await prisma.user.findFirst({
       where: { email: email },
     });
@@ -62,4 +79,9 @@ const storeCheck = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticateUser, adminCheck, storeCheck };
+module.exports = {
+  authenticateUser,
+  adminCheck,
+  storeCheck,
+  authenticateToken,
+};

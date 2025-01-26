@@ -2,12 +2,45 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma.js");
+const passport = require("passport");
+
 const {
   authenticateUser,
   adminCheck,
   storeCheck,
 } = require("../middleware/auth.js");
 const router = express.Router();
+
+// เริ่มกระบวนการ login ด้วย Google
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// Callback หลังจาก Google ยืนยันตัวตนสำเร็จ
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+    // สร้าง Token สำหรับผู้ใช้
+    const token = jwt.sign(
+      { id: req.user.id, email: req.user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    // Redirect ไปยัง Frontend พร้อมส่ง Token
+    res.redirect(`http://localhost:5173/?token=${token}`); // เปลี่ยน URL ให้ตรงกับ Frontend
+  }
+);
+
+// Logout
+router.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) return res.status(500).json({ message: "Error logging out" });
+    res.redirect("/");
+  });
+});
 
 router.post("/register", async (req, res) => {
   try {
