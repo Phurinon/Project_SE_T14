@@ -1,6 +1,7 @@
 -----------Server---------------
 #Step 1
 npm install express morgan cors nodemon bcryptjs jsonwebtoken
+npm i express-session passport-google-oauth20 passport
 
 #Step 2
 docker compose up -d
