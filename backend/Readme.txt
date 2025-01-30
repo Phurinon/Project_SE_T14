@@ -1,7 +1,7 @@
 -----------Server---------------
 #Step 1
-npm install express morgan cors nodemon bcryptjs jsonwebtoken
-npm i express-session passport-google-oauth20 passport
+npm i
+npm i passport passport-google-oauth20 express-session
 
 #Step 2
 docker compose up -d
@@ -16,16 +16,12 @@ REVOKE CONNECT ON DATABASE mydb FROM public;
     GRANT ALL ON SCHEMA public TO appuser;
     GRANT ALL ON SCHEMA drizzle TO appuser;
 
-#Step 3
-npm install prisma
-npx prisma init
-npm install @prisma/client
 
-#Step 4
+#Step 3
 เปิด Dbeaver สร้าง database postgres
 --อย่าลืมเปลี่ยน DATABASE_URL ใน .env ให้ตรงกัน--
 
-#step 5
+#step 4
 npx prisma migrate dev --name ชื่อ database
 
 
