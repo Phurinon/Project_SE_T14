@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -81,6 +82,7 @@ export default function Register() {
       );
       console.log(response);
       toast.success("สมัครสมาชิกสำเร็จ");
+      navigate("/login");
     } catch (err) {
       const errorMessage = err.response?.data?.message;
       toast.error(errorMessage);

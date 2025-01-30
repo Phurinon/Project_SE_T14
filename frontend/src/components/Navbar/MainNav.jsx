@@ -42,7 +42,7 @@ export default function MainNav() {
           {/* Logo and Navigation */}
           <div className="flex items-center gap-8">
             <Link
-              to="/"
+              to="/user"
               className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-transform duration-200 hover:scale-105"
             >
               LOGO
@@ -50,7 +50,7 @@ export default function MainNav() {
             {userToken ? (
               <>
                 <Link
-                  to="/"
+                  to="/user"
                   className="text-gray-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:text-blue-600 hover:bg-blue-50"
                 >
                   Home

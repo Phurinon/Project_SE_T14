@@ -4,6 +4,9 @@ import useDusthStore from "../../Global Store/DusthStore";
 import { toast } from "react-toastify";
 import UploadFile from "../../components/store/UploadFIle";
 import { Loader } from "lucide-react";
+import { useNavigate,Link } from "react-router-dom";
+
+const navigate = useNavigate();
 
 const CreateShop = () => {
   const [form, setForm] = useState({
@@ -54,6 +57,7 @@ const CreateShop = () => {
       const newShop = await createShop(shopData, userToken);
       toast.success("Shop created successfully!");
       console.log("New Shop:", newShop);
+      navigate('/user')
     } catch (error) {
       console.error("Error creating shop:", error);
       toast.error(error.response?.data?.message || "Error creating shop");
