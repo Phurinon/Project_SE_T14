@@ -13,7 +13,6 @@ const commentRoutes = require("./routes/comments.js");
 const safetyLevelRoutes = require("./routes/safetyLevels.js");
 const adminRoutes = require("./routes/admin.js");
 const airRoutes = require("./routes/Air.js");
-const iqairRoutes = require("./routes/iqair.js");
 
 //Middleware
 app.use(morgan("dev"));
@@ -50,7 +49,6 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/safety-levels", safetyLevelRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/air", airRoutes);
-app.use("/api/iqair", iqairRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
