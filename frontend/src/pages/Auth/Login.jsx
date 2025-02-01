@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Loader } from "lucide-react";
 import useDusthStore from "../../Global Store/DusthStore";
 import { toast } from "react-toastify";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import "./Login.css"; // Import CSS file
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,6 +14,13 @@ export default function Login() {
     email: "",
     password: "",
   });
+
+  // Google Login Handler
+  const responseGoogle = (response) => {
+    console.log(response);
+    toast.success("เข้าสู่ระบบด้วย Google สำเร็จ");
+    // Send the response to your backend for further processing
+  };
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,92 +58,86 @@ export default function Login() {
       navigate("/user");
     }
   };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          เข้าสู่ระบบ
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+    <div className="login-container">
+      <div className="login-header">
+        <h2>เข้าสู่ระบบ</h2>
+        <p>
           หรือ{" "}
-          <Link
-            to="/register"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
+          <Link to="/register" className="login-link">
             สมัครสมาชิกใหม่
           </Link>
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                อีเมล
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  value={formData.email}
-                  onChange={handleOnChange}
-                  disabled={loading}
-                />
-              </div>
-            </div>
+      <div className="login-form-container">
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="email">อีเมล</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={formData.email}
+              onChange={handleOnChange}
+              disabled={loading}
+            />
+          </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                รหัสผ่าน
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  value={formData.password}
-                  onChange={handleOnChange}
-                  disabled={loading}
-                />
+          <div className="password-container">
+            <label htmlFor="password">รหัสผ่าน</label>
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              value={formData.password}
+              onChange={handleOnChange}
+              disabled={loading}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={loading}
+            >
+              {showPassword ? <EyeOff /> : <Eye />}
+            </button>
+          </div>
+
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading && <Loader className="loader" />}
+            {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+          </button>
+        </form>
+
+        <div className="social-login">
+          {/* Google Login Button */}
+          <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+            <GoogleLogin
+              onSuccess={responseGoogle}
+              onError={() => toast.error("เข้าสู่ระบบด้วย Google ล้มเหลว")}
+              render={(renderProps) => (
                 <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
+                  onClick={renderProps.onClick}
+                  disabled={renderProps.disabled}
+                  className="google-login-button"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                    alt="Google Logo"
+                    width="16"
+                    height="16"
+                  />
+                  เข้าสู่ระบบด้วย Google
                 </button>
-              </div>
-            </div>
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center items-center gap-2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading && <Loader className="h-4 w-4 animate-spin" />}
-                {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-              </button>
-            </div>
-          </form>
+              )}
+            />
+          </GoogleOAuthProvider>
         </div>
       </div>
     </div>

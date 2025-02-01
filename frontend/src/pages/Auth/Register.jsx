@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import "./regis.css"; // Import CSS file
 
 export default function Register() {
   const [loading, setLoading] = useState(false);
@@ -19,6 +21,13 @@ export default function Register() {
     password: "",
     general: "",
   });
+
+  // Google Login Handler
+  const responseGoogle = (response) => {
+    console.log(response);
+    toast.success("เข้าสู่ระบบด้วย Google สำเร็จ");
+    // Send the response to your backend for further processing
+  };
 
   // Validation functions
   const validateName = (name) => {
@@ -90,142 +99,99 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          สมัครสมาชิก
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+    <div className="register-container">
+      <div className="register-header">
+        <h2>สมัครสมาชิก</h2>
+        <p>
           หรือ{" "}
-          <Link
-            to="/login"
-            className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200"
-          >
+          <Link to="/login" className="register-link">
             เข้าสู่ระบบ
           </Link>
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-100">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
-              >
-                ชื่อผู้ใช้
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.name ? "border-red-300" : "border-gray-300"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:text-sm`}
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="กรุณากรอกชื่อผู้ใช้"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                )}
-              </div>
-            </div>
+      <div className="register-form-container">
+        <form className="register-form" onSubmit={handleSubmit}>
+          {/* Name field */}
+          <div>
+            <label htmlFor="name">ชื่อผู้ใช้</label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="กรุณากรอกชื่อผู้ใช้"
+            />
+            {errors.name && <p className="error-message">{errors.name}</p>}
+          </div>
 
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                อีเมล
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email ? "border-red-300" : "border-gray-300"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:text-sm`}
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="example@email.com"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-                )}
-              </div>
-            </div>
+          {/* Email field */}
+          <div>
+            <label htmlFor="email">อีเมล</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="example@email.com"
+            />
+            {errors.email && <p className="error-message">{errors.email}</p>}
+          </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                รหัสผ่าน
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.password ? "border-red-300" : "border-gray-300"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 sm:text-sm`}
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="อย่างน้อย 6 ตัวอักษร"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500 transition-colors duration-200"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                )}
-              </div>
-            </div>
-
-            {errors.general && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
-                {errors.general}
-              </div>
+          {/* Password field */}
+          <div className="password-container">
+            <label htmlFor="password">รหัสผ่าน</label>
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="อย่างน้อย 6 ตัวอักษร"
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff /> : <Eye />}
+            </button>
+            {errors.password && (
+              <p className="error-message">{errors.password}</p>
             )}
+          </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                {loading ? (
-                  <div className="flex items-center">
-                    <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                    กำลังสมัครสมาชิก...
-                  </div>
-                ) : (
-                  "สมัครสมาชิก"
-                )}
-              </button>
-            </div>
-          </form>
+          {/* Submit button */}
+          <button type="submit" className="register-button" disabled={loading}>
+            {loading ? <Loader2 className="loader" /> : "สมัครสมาชิก"}
+          </button>
+        </form>
+
+        <div className="social-login">
+          {/* Google Login Button */}
+          <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+            <GoogleLogin
+              onSuccess={responseGoogle}
+              onError={() => toast.error("เข้าสู่ระบบด้วย Google ล้มเหลว")}
+              render={(renderProps) => (
+                <button
+                  onClick={renderProps.onClick}
+                  disabled={renderProps.disabled}
+                  className="google-login-button"
+                >
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                    alt="Google Logo"
+                    width="16"
+                    height="16"
+                  />
+                  เข้าสู่ระบบด้วย Google
+                </button>
+              )}
+            />
+          </GoogleOAuthProvider>
         </div>
       </div>
     </div>
