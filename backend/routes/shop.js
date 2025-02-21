@@ -114,76 +114,133 @@ router.post("/", authenticateUser, async (req, res) => {
       images,
     } = req.body;
 
+    // Basic validation
     if (!name || !address || !phone || !email) {
       return res.status(400).json({ 
+        success: false,
         message: "Missing required fields",
         required: "name, address, phone, email are required"
       });
     }
-    if (!Array.isArray(images)) {
+
+    // Image validation
+    if (!images || !Array.isArray(images)) {
       return res.status(400).json({
+        success: false,
         message: "Images must be an array"
       });
     }
 
-    const parsedLatitude = parseFloat(latitude);
-    const parsedLongitude = parseFloat(longitude);
+    // Parse coordinates with validation
+    const parsedLatitude = latitude ? parseFloat(latitude) : null;
+    const parsedLongitude = longitude ? parseFloat(longitude) : null;
 
-    const shop = await prisma.shop.create({
-      data: {
-        name: name.trim(),
-        address: address.trim(),
-        description: description?.trim() || "",
-        phone: phone.trim(),
-        email: email.trim().toLowerCase(),
-        openTime: openTime || null,
-        closeTime: closeTime || null,
-        latitude: parsedLatitude || null,
-        longitude: parsedLongitude || null,
-        type: type?.trim() || "other",
-        userId: req.user.id,
-        images: {
-          create: images.map((item) => ({
-            asset_id: item.asset_id || "",
-            public_id: item.public_id || "",
-            url: item.url || "",
-            secure_url: item.secure_url || item.url || "",
-          })),
+    if (latitude && isNaN(parsedLatitude)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid latitude format"
+      });
+    }
+
+    if (longitude && isNaN(parsedLongitude)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid longitude format"
+      });
+    }
+
+    // Create shop with transaction to ensure both shop creation and user update succeed
+    const [shop, updatedUser] = await prisma.$transaction(async (prisma) => {
+      const newShop = await prisma.shop.create({
+        data: {
+          name: name.trim(),
+          address: address.trim(),
+          description: description?.trim() || "",
+          phone: phone.trim(),
+          email: email.trim().toLowerCase(),
+          openTime: openTime || null,
+          closeTime: closeTime || null,
+          latitude: parsedLatitude,
+          longitude: parsedLongitude,
+          type: type?.trim() || "other",
+          userId: req.user.id,
+          images: {
+            create: images.map((item) => ({
+              asset_id: item.asset_id || "",
+              public_id: item.public_id || "",
+              url: item.url || "",
+              secure_url: item.secure_url || item.url || "",
+            })),
+          },
         },
-      },
-      include: {
-        images: true,
-        user: {
-          select: {
-            name: true,
-            email: true
+        include: {
+          images: true,
+          user: {
+            select: {
+              name: true,
+              email: true
+            }
           }
+        }
+      });
+
+      const userUpdate = await prisma.user.update({
+        where: { id: req.user.id },
+        data: { role: "store" },
+      });
+
+      return [newShop, userUpdate];
+    });
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: "Shop created successfully",
+      data: {
+        shop,
+        user: {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role
         }
       }
     });
 
-    const updatedUser = await prisma.user.update({
-      where: { id: req.user.id },
-      data: { role: "store" },
-    });
-
-    res.status(201).json(shop,updatedUser);
-
   } catch (error) {
     console.error("Shop creation error:", error);
+
+    // Handle specific Prisma errors
     if (error.code === 'P2002') {
       return res.status(400).json({ 
+        success: false,
         message: "A shop with this name already exists"
       });
     }
+
     if (error.code === 'P2003') {
       return res.status(400).json({
+        success: false,
         message: "Invalid user ID or reference constraint failed" 
       });
     }
+
+    // Handle validation errors from Prisma
+    if (error.code === 'P2025') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid record operation" 
+      });
+    }
+
+    // Generic error response
     res.status(500).json({ 
+      success: false,
       message: "Error creating shop",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? {
+        message: error.message,
+        code: error.code
+      } : undefined
     });
   }
 });

@@ -28,6 +28,7 @@ export const createShop = async (shopData, token) => {
   const response = await axios.post(`${API}/shops`, shopData, {
     headers: {
       Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
     },
   });
   return response.data;
