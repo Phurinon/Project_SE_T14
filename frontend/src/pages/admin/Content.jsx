@@ -42,20 +42,26 @@ export default function Content() {
     try {
       const status = action === "approve" ? "approved" : "rejected";
       await moderateReview(token, id, status);
-
-      fetchReportedContent();
+  
+      // Remove the item from local state if approved
+      if (action === "approve") {
+        setContent(prevContent => prevContent.filter(item => item.id !== id));
+      } else {
+        // Refresh the list if rejected
+        await fetchReportedContent();
+      }
     } catch (error) {
       console.error("Moderation failed", {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
       });
-
+  
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
         "Failed to moderate content";
-
+  
       alert(errorMessage);
     }
   };

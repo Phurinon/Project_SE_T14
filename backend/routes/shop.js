@@ -38,7 +38,12 @@ router.get("/", async (req, res) => {
         },
       },
     });
-    res.json(shops);
+    const types = [...new Set(shops.map(shop => shop.type))];
+    
+    res.json({
+      shops,
+      types
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error fetching shops" });

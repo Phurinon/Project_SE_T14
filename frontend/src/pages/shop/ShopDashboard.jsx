@@ -1,76 +1,167 @@
-import { useState } from 'react';
-import { Store, TrendingUp, Users, Clock } from 'lucide-react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Star, Clock, TrendingUp } from 'lucide-react';
+import { getMyShop } from '../../api/shop';
+import { getShopReviews } from '../../api/reviews';
+import useDusthStore from '../../Global Store/DusthStore';
 
-const DashboardCard = ({ title, value, icon: Icon}) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm border">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm text-gray-600">{title}</p>
-        <h3 className="text-2xl font-semibold mt-1">{value}</h3>
+const DashboardCard = ({ title, value, icon: Icon, trend, subtitle, loading }) => {
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <div className="animate-pulse flex justify-between items-center">
+          <div className="space-y-3">
+            <div className="h-4 w-24 bg-gray-200 rounded"></div>
+            <div className="h-6 w-32 bg-gray-200 rounded"></div>
+            {subtitle && <div className="h-4 w-36 bg-gray-200 rounded"></div>}
+          </div>
+          <div className="h-8 w-8 bg-gray-200 rounded"></div>
+        </div>
       </div>
-      <Icon className="h-8 w-8 text-blue-500" />
-    </div>
-  </div>
-);
+    );
+  }
 
-DashboardCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  icon: PropTypes.elementType.isRequired,
-  trend: PropTypes.number,
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <p className="text-sm text-gray-500">{title}</p>
+          <h3 className="text-2xl font-semibold">{value}</h3>
+          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+          {trend !== undefined && (
+            <p className={`text-sm ${trend >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center gap-1`}>
+              {trend >= 0 ? '+' : ''}{trend}%
+            </p>
+          )}
+        </div>
+        <Icon className="h-8 w-8 text-blue-500" />
+      </div>
+    </div>
+  );
 };
 
 const ShopDashboard = () => {
-  const [recentActivities] = useState([
-    { id: 1, action: 'มีการรีวิวใหม่', time: '5 นาทีที่แล้ว' },
-    { id: 2, action: 'อัพเดทรูปภาพร้านค้า', time: '2 ชั่วโมงที่แล้ว' },
-    { id: 3, action: 'แก้ไขข้อมูลร้านค้า', time: '1 วันที่แล้ว' },
-  ]);
+  const [shopData, setShopData] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const token = useDusthStore((state) => state.token);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!token) {
+        setError('ไม่พบข้อมูลการเข้าสู่ระบบ');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get shop data
+        const shop = await getMyShop(token);
+        setShopData(shop);
+        
+        // Get shop reviews if shop exists
+        if (shop && shop.id) {
+          const shopReviews = await getShopReviews(shop.id);
+          setReviews(shopReviews);
+        }
+      } catch (err) {
+        console.error('Dashboard data fetch error:', err);
+        setError('ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [token]); // Add token as dependency
+
+  const calculateMetrics = () => {
+    if (!reviews.length) return {
+      averageRating: 0,
+      monthlyReviews: 0,
+      totalReviews: 0,
+      reviewTrend: 0
+    };
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    
+    const currentMonthReviews = reviews.filter(review => 
+      new Date(review.createdAt).getMonth() === currentMonth
+    ).length;
+
+    const lastMonthReviews = reviews.filter(review => 
+      new Date(review.createdAt).getMonth() === lastMonth
+    ).length;
+
+    const reviewTrend = lastMonthReviews === 0 ? 100 :
+      ((currentMonthReviews - lastMonthReviews) / lastMonthReviews) * 100;
+
+    const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
+
+    return {
+      averageRating: averageRating.toFixed(1),
+      monthlyReviews: currentMonthReviews,
+      totalReviews: reviews.length,
+      reviewTrend: Math.round(reviewTrend)
+    };
+  };
+
+  const metrics = calculateMetrics();
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <DashboardCard 
-          title="ยอดเข้าชมร้านค้า" 
-          value="2,451" 
-          icon={Store}
-          trend={12.5}
-        />
-        <DashboardCard 
-          title="รีวิวใหม่" 
-          value="28" 
-          icon={TrendingUp}
-          trend={-5.2}
-        />
-        <DashboardCard 
-          title="ผู้ติดตาม" 
-          value="1,205" 
-          icon={Users}
-          trend={8.1}
-        />
-        <DashboardCard 
-          title="เรตติ้งเฉลี่ย" 
-          value="4.8" 
-          icon={TrendingUp}
-        />
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h2 className="text-lg font-semibold mb-4">กิจกรรมล่าสุด</h2>
-        <div className="space-y-4">
-          {recentActivities.map(activity => (
-            <div key={activity.id} className="flex items-center justify-between border-b pb-4">
-              <div className="flex items-center space-x-3">
-                <Clock className="h-5 w-5 text-gray-400" />
-                <span>{activity.action}</span>
-              </div>
-              <span className="text-sm text-gray-500">{activity.time}</span>
-            </div>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardCard 
+          title="คะแนนรีวิวเฉลี่ย"
+          value={`${metrics.averageRating}/5.0`}
+          icon={Star}
+          subtitle={`จากทั้งหมด ${metrics.totalReviews} รีวิว`}
+          loading={loading}
+        />
+        
+        <DashboardCard 
+          title="รีวิวเดือนนี้"
+          value={metrics.monthlyReviews}
+          icon={TrendingUp}
+          trend={metrics.reviewTrend}
+          subtitle="เทียบกับเดือนที่แล้ว"
+          loading={loading}
+        />
+
+        <DashboardCard 
+          title="เวลาทำการ"
+          value={shopData ? `${shopData.openTime || '-'} - ${shopData.closeTime || '-'}` : '-'}
+          icon={Clock}
+          subtitle="เวลาเปิด-ปิดร้าน"
+          loading={loading}
+        />
+
+        <DashboardCard 
+          title="ประเภทร้านค้า"
+          value={shopData?.type || '-'}
+          icon={MapPin}
+          subtitle={shopData?.address}
+          loading={loading}
+        />
       </div>
     </div>
   );

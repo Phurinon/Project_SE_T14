@@ -13,7 +13,7 @@ const commentRoutes = require("./routes/comments.js");
 const safetyLevelRoutes = require("./routes/safetyLevels.js");
 const adminRoutes = require("./routes/admin.js");
 const airRoutes = require("./routes/Air.js");
-
+const bookmarkRoutes = require("./routes/bookmark.js");
 //Middleware
 app.use(morgan("dev"));
 
@@ -49,6 +49,7 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/safety-levels", safetyLevelRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/air", airRoutes);
+app.use("/api", bookmarkRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

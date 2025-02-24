@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
-import { Filter, Shield, ShieldOff, UserCog } from "lucide-react";
+import { Search, Shield, ShieldOff, UserCog } from "lucide-react";
 import { getAllUsers, changeUserStatus, changeUserRole } from "../../api/admin";
 import useDusthStore from "../../Global Store/DusthStore";
 
 export default function UserManage() {
   const token = useDusthStore((state) => state.token);
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleGetUsers = async () => {
     try {
       const response = await getAllUsers(token);
       setUsers(response);
+      setFilteredUsers(response);
     } catch (err) {
       console.error("Failed to fetch users:", err);
     }
@@ -20,11 +23,11 @@ export default function UserManage() {
     try {
       const newStatus = currentStatus === "active" ? "pending" : "active";
       await changeUserStatus(userId, newStatus, token);
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, status: newStatus } : user
-        )
+      const updatedUsers = users.map((user) =>
+        user.id === userId ? { ...user, status: newStatus } : user
       );
+      setUsers(updatedUsers);
+      applyFilter(updatedUsers, searchTerm);
     } catch (err) {
       console.error("Failed to change status:", err);
     }
@@ -34,14 +37,34 @@ export default function UserManage() {
     try {
       const newRole = currentRole === "user" ? "store" : "user";
       await changeUserRole(userId, newRole, token);
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === userId ? { ...user, role: newRole } : user
-        )
+      const updatedUsers = users.map((user) =>
+        user.id === userId ? { ...user, role: newRole } : user
       );
+      setUsers(updatedUsers);
+      applyFilter(updatedUsers, searchTerm);
     } catch (err) {
       console.error("Failed to change role:", err);
     }
+  };
+
+  const applyFilter = (userList, term) => {
+    if (!term.trim()) {
+      setFilteredUsers(userList);
+      return;
+    }
+
+    const searchTermLower = term.toLowerCase();
+    const filtered = userList.filter(user => 
+      user.name.toLowerCase().includes(searchTermLower) ||
+      user.email.toLowerCase().includes(searchTermLower) ||
+      (user.role === "store" && "ร้านค้า".includes(searchTermLower)) ||
+      (user.role === "admin" && "ผู้ดูแล".includes(searchTermLower)) ||
+      (user.role === "user" && "ผู้ใช้ทั่วไป".includes(searchTermLower)) ||
+      (user.status === "active" && "ใช้งาน".includes(searchTermLower)) ||
+      (user.status === "pending" && "รอตรวจสอบ".includes(searchTermLower))
+    );
+    
+    setFilteredUsers(filtered);
   };
 
   useEffect(() => {
@@ -50,10 +73,13 @@ export default function UserManage() {
     }
   }, [token]);
 
-  
+  useEffect(() => {
+    applyFilter(users, searchTerm);
+  }, [searchTerm]);
+
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">User Management</h2>
       </div>
 
@@ -61,10 +87,17 @@ export default function UserManage() {
         <div className="p-6 border-b">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">รายชื่อผู้ใช้ทั้งหมด</h3>
-            <div className="flex gap-2">
-              <button className="p-2 border rounded-lg hover:bg-gray-50">
-                <Filter className="h-4 w-4" />
-              </button>
+            <div className="w-72">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาจากชื่อ, อีเมล, ประเภท, สถานะ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -84,8 +117,8 @@ export default function UserManage() {
                 </tr>
               </thead>
               <tbody>
-                {users?.map((user, index) => (
-                  <tr key={user.id} className="border-b">
+                {filteredUsers.map((user, index) => (
+                  <tr key={user.id} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-3 w-1/6 text-center">{index + 1}</td>
                     <td className="px-4 py-3 w-1/6 text-center">{user.name}</td>
                     <td className="px-4 py-3 w-1/6 text-center">

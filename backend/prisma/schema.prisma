@@ -7,6 +7,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  shopId    Int
+  category  String? 
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  shop      Shop     @relation(fields: [shopId], references: [id])
+
+  @@unique([userId, shopId]) // Ensures one user can only bookmark a shop once
+}
+
+model ReviewLike {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  reviewId  Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  review    Review   @relation(fields: [reviewId], references: [id])
+
+  @@unique([userId, reviewId]) // Ensures one user can only like a review once
+}
 model User {
   id        Int       @id @default(autoincrement())
   name      String
@@ -19,6 +41,8 @@ model User {
   shop      Shop? // User can have a shop
   reviews   Review[] // User can have reviews
   comments  Comment[] // User can have comments
+  likedReviews ReviewLike[]
+  bookmarks Bookmark[]
 }
 
 model Shop {
@@ -38,6 +62,7 @@ model Shop {
   reviews     Review[] // ร้านสามารถมี review ได้หลายคน
   images      Image[] // ร้านสามารถมีรูปได้หลายรูป
   comments    Comment[] // ร้านสามารถมี comment ได้หลายคน
+  bookmarks   Bookmark[]
   type        String       @default("ที่กิน")
   rating      Float        @default(0) // คะแนนร้าน
   createdAt   DateTime     @default(now())
@@ -45,22 +70,24 @@ model Shop {
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
-  content   String // ความคิดเห็น
+  id        Int          @id @default(autoincrement())
+  content   String
   rating    Int
   comment   String
-  status    String   @default("pending") // pending, approved, rejected
+  status    String       @default("pending")
   userId    Int
   shopId    Int
-  likes     Int      @default(0) // จำนวนไลค์
-  reply     String? // ตอบกลับจากร้าน
-  reported  Boolean  @default(false) // รายงานรีวิว
-  reason    String? // สาเหตุที่รายงาน
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  shop      Shop     @relation(fields: [shopId], references: [id])
-}
+  likes     Int          @default(0)
+  reply     String?
+  reported  Boolean      @default(false)
+  reason    String?
+  createdAt DateTime     @default(now())
+  user      User         @relation(fields: [userId], references: [id])
+  shop      Shop         @relation(fields: [shopId], references: [id])
+  likedBy   ReviewLike[] // Add this relation
 
+  @@unique([userId, shopId]) // Ensures one review per user per shop
+}
 model Comment {
   id        Int      @id @default(autoincrement())
   content   String // ความคิดเห็น

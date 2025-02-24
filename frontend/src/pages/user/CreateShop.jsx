@@ -37,7 +37,7 @@ const CreateShop = () => {
 
     try {
       if (form.images.length === 0) {
-        toast.error("Please upload at least one image");
+        toast.error("กรุณาอัพโหลดรูปภาพอย่างน้อย 1 รูป");
         return;
       }
 
@@ -52,20 +52,20 @@ const CreateShop = () => {
       };
 
       const newShop = await createShop(shopData, userToken);
-      toast.success("Shop created successfully!");
+      toast.success("สร้างร้านค้าสำเร็จ!");
       console.log("New Shop:", newShop);
     } catch (error) {
       console.error("Error creating shop:", error);
-      toast.error(error.response?.data?.message || "Error creating shop");
+      toast.error(error.response?.data?.message || "เกิดข้อผิดพลาดในการสร้างร้านค้า");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const shopTypes = [
-    { value: "food", label: "ที่กิน" },
-    { value: "travel", label: "ที่เที่ยว" },
-    { value: "charity", label: "ที่ทำบุญ" },
+    { value: "ที่กิน", label: "ที่กิน" },
+    { value: "ที่เที่ยว", label: "ที่เที่ยว" },
+    { value: "ที่ทำบุญ", label: "ที่ทำบุญ" },
   ];
 
   return (
@@ -73,20 +73,20 @@ const CreateShop = () => {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-center text-3xl font-extrabold text-blue-600 mb-8">
-            Create Your Shop
+            สร้างร้านค้าของคุณ
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Basic Information */}
+              {/* ข้อมูลพื้นฐาน */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                  Basic Information
+                  ข้อมูลพื้นฐาน
                 </h3>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Shop Name
+                    ชื่อร้านค้า
                   </label>
                   <input
                     type="text"
@@ -100,7 +100,7 @@ const CreateShop = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Type
+                    ประเภทร้านค้า
                   </label>
                   <select
                     name="type"
@@ -109,7 +109,7 @@ const CreateShop = () => {
                     required
                     className="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Select Shop Type</option>
+                    <option value="">เลือกประเภทร้านค้า</option>
                     {shopTypes.map((type) => (
                       <option key={type.value} value={type.value}>
                         {type.label}
@@ -120,7 +120,7 @@ const CreateShop = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
+                    รายละเอียดร้านค้า
                   </label>
                   <textarea
                     name="description"
@@ -133,15 +133,15 @@ const CreateShop = () => {
                 </div>
               </div>
 
-              {/* Contact Information */}
+              {/* ข้อมูลการติดต่อ */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                  Contact Information
+                  ข้อมูลการติดต่อ
                 </h3>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                    อีเมล
                   </label>
                   <input
                     type="email"
@@ -155,7 +155,7 @@ const CreateShop = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
+                    เบอร์โทรศัพท์
                   </label>
                   <input
                     type="tel"
@@ -169,7 +169,7 @@ const CreateShop = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address
+                    ที่อยู่
                   </label>
                   <input
                     type="text"
@@ -183,17 +183,17 @@ const CreateShop = () => {
               </div>
             </div>
 
-            {/* Location and Hours */}
+            {/* ที่ตั้งและเวลาทำการ */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                  Location
+                  ที่ตั้งร้านค้า
                 </h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Latitude
+                      ละติจูด
                     </label>
                     <input
                       type="text"
@@ -207,7 +207,7 @@ const CreateShop = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Longitude
+                      ลองจิจูด
                     </label>
                     <input
                       type="text"
@@ -223,13 +223,13 @@ const CreateShop = () => {
 
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                  Business Hours
+                  เวลาทำการ
                 </h3>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Open Time
+                      เวลาเปิด
                     </label>
                     <input
                       type="time"
@@ -243,7 +243,7 @@ const CreateShop = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Close Time
+                      เวลาปิด
                     </label>
                     <input
                       type="time"
@@ -258,15 +258,15 @@ const CreateShop = () => {
               </div>
             </div>
 
-            {/* Image Upload Section */}
+            {/* ส่วนอัพโหลดรูปภาพ */}
             <div className="pt-6">
               <h3 className="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">
-                Shop Images
+                รูปภาพร้านค้า
               </h3>
               <UploadFile form={form} setForm={setForm} />
             </div>
 
-            {/* Submit Button */}
+            {/* ปุ่มบันทึก */}
             <div className="pt-6">
               <button
                 type="submit"
@@ -274,7 +274,7 @@ const CreateShop = () => {
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting && <Loader className="w-5 h-5 animate-spin" />}
-                {isSubmitting ? "Creating Shop..." : "Create Shop"}
+                {isSubmitting ? "กำลังสร้างร้านค้า..." : "สร้างร้านค้า"}
               </button>
             </div>
           </form>

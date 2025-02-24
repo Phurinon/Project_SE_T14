@@ -39,6 +39,18 @@ router.post("/", authenticateUser, async (req, res) => {
   try {
     const { content, rating, comment, shopId } = req.body;
 
+    // Check if user has already reviewed this shop
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        userId: req.user.id,
+        shopId: parseInt(shopId),
+      },
+    });
+
+    if (existingReview) {
+      return res.status(400).json({ message: "You have already reviewed this shop" });
+    }
+
     const review = await prisma.review.create({
       data: {
         content,
@@ -64,7 +76,11 @@ router.post("/", authenticateUser, async (req, res) => {
 
     res.status(201).json(review);
   } catch (error) {
-    res.status(500).json({ message: "Error creating review" });
+    if (error.code === 'P2002') {
+      res.status(400).json({ message: "You have already reviewed this shop" });
+    } else {
+      res.status(500).json({ message: "Error creating review" });
+    }
   }
 });
 
@@ -131,6 +147,14 @@ router.post("/:id/reply", authenticateUser, async (req, res) => {
     const updatedReview = await prisma.review.update({
       where: { id: parseInt(req.params.id) },
       data: { reply },
+      include: {  // เพิ่ม include
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
 
     res.json(updatedReview);
@@ -144,18 +168,54 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
   try {
     const reviewId = parseInt(req.params.id);
 
+    // Check if user has already liked this review
+    const existingLike = await prisma.reviewLike.findFirst({
+      where: {
+        userId: req.user.id,
+        reviewId: reviewId,
+      },
+    });
+
+    if (existingLike) {
+      // Unlike the review
+      await prisma.reviewLike.delete({
+        where: {
+          id: existingLike.id,
+        },
+      });
+
+      const review = await prisma.review.update({
+        where: { id: reviewId },
+        data: {
+          likes: {
+            decrement: 1,
+          },
+        },
+      });
+
+      return res.status(200).json({ message: "Unliked successfully", review });
+    }
+
+    // Like the review
+    await prisma.reviewLike.create({
+      data: {
+        userId: req.user.id,
+        reviewId: reviewId,
+      },
+    });
+
     const review = await prisma.review.update({
       where: { id: reviewId },
       data: {
         likes: {
-          increment: 1, // เพิ่มจำนวนไลค์ทีละ 1
+          increment: 1,
         },
       },
     });
 
     res.status(200).json({ message: "Liked successfully", review });
   } catch (error) {
-    res.status(500).json({ message: "Error liking review" });
+    res.status(500).json({ message: "Error processing like/unlike" });
   }
 });
 
@@ -231,6 +291,15 @@ router.put("/:id/moderate", authenticateUser, adminCheck, async (req, res) => {
       return res.status(404).json({ message: "Review not found" });
     }
 
+    // If status is approved, delete the review
+    if (status === "approved") {
+      await prisma.review.delete({
+        where: { id: reviewId },
+      });
+      return res.json({ message: "Review has been approved and deleted" });
+    }
+
+    // If status is rejected, update the review status
     const moderatedReview = await prisma.review.update({
       where: { id: reviewId },
       data: {

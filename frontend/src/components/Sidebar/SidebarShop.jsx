@@ -4,7 +4,7 @@ import useDusthStore from "../../Global Store/DusthStore";
 
 const menuItems = [
   { path: "/shop", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/shop/profile", label: "Store Management", icon: Store },
+  { path: "/shop/profile", label: "Management", icon: Store },
   { path: "/shop/reviews", label: "Customer Reviews", icon: MessageSquare },
 ];
 
@@ -29,7 +29,7 @@ export default function SidebarShop() {
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600">
             <Store className="w-6 h-6 text-white" />
           </div>
-          <span className="text-lg font-bold text-white">Store Admin</span>
+          <span className="text-lg font-bold text-white">Store</span>
         </Link>
 
         {/* Menu Items */}

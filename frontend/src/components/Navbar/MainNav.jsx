@@ -45,7 +45,9 @@ export default function MainNav() {
               to="/user"
               className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-transform duration-200 hover:scale-105"
             >
-              LOGO
+              <img src="/LOGO.webp" 
+              alt=""
+              className="w-12 h-12 rounded-full"  />
             </Link>
             {userToken ? (
               <>
@@ -54,6 +56,12 @@ export default function MainNav() {
                   className="text-gray-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:text-blue-600 hover:bg-blue-50"
                 >
                   Home
+                </Link>
+                <Link
+                  to="/user/bookmark"
+                  className="text-gray-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:text-blue-600 hover:bg-blue-50"
+                >
+                  Bookmark
                 </Link>
               </>
             ) : null}

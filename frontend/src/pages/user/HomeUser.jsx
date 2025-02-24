@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
-  Circle,
   useMap,
 } from "react-leaflet";
 import {
@@ -15,25 +14,14 @@ import {
   Mountain,
   Church,
   LayoutGrid,
+  Bookmark
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { getAllShops } from "../../api/shop";
 import { getAirPollutionData } from "../../api/air";
-
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+import { getAllSafetyLevels } from "../../api/safetyLevels";
+import { createBookmark, removeBookmark, checkBookmarkStatus } from "../../api/bookmark";
 
 const MapUpdater = ({ center }) => {
   const map = useMap();
@@ -41,58 +29,6 @@ const MapUpdater = ({ center }) => {
     map.setView(center);
   }, [center, map]);
   return null;
-};
-
-const SEARCH_RADIUS = 2;
-const FILTER_TYPES = [
-  {
-    id: "all",
-    label: "ทั้งหมด",
-    icon: LayoutGrid,
-    color: "bg-amber-400 border-amber-500",
-    hoverColor: "hover:bg-amber-500",
-    activeTextColor: "text-amber-900",
-  },
-  {
-    id: "ที่กิน",
-    label: "ที่กิน",
-    icon: UtensilsCrossed,
-    color: "bg-rose-400 border-rose-500",
-    hoverColor: "hover:bg-rose-500",
-    activeTextColor: "text-rose-900",
-  },
-  {
-    id: "ที่เที่ยว",
-    label: "ที่เที่ยว",
-    icon: Mountain,
-    color: "bg-blue-400 border-blue-500",
-    hoverColor: "hover:bg-blue-500",
-    activeTextColor: "text-blue-900",
-  },
-  {
-    id: "ที่ทำบุญ",
-    label: "ที่ทำบุญ",
-    icon: Church,
-    color: "bg-purple-400 border-purple-500",
-    hoverColor: "hover:bg-purple-500",
-    activeTextColor: "text-purple-900",
-  },
-];
-
-const getPM25Color = (value) => {
-  if (value <= 25) return "#10B981";
-  if (value <= 37) return "#FBBF24";
-  if (value <= 50) return "#F97316";
-  if (value <= 90) return "#EF4444";
-  return "#7F1D1D";
-};
-
-const getPM25Level = (value) => {
-  if (value <= 25) return "คุณภาพอากาศดี";
-  if (value <= 37) return "คุณภาพอากาศปานกลาง";
-  if (value <= 50) return "เริ่มมีผลต่อสุขภาพ";
-  if (value <= 90) return "มีผลต่อสุขภาพ";
-  return "อันตราย";
 };
 
 const FilterButton = ({ type, isActive, onClick }) => {
@@ -124,11 +60,85 @@ const FilterButton = ({ type, isActive, onClick }) => {
   );
 };
 
-const ShopPopup = ({ shop }) => {
+const getPM25Color = (value, safetyLevels) => {
+  const sortedLevels = [...safetyLevels].sort((a, b) => a.maxValue - b.maxValue);
+  const level = sortedLevels.find(level => value <= level.maxValue);
+  return level ? level.color : sortedLevels[sortedLevels.length - 1].color;
+};
+
+const getPM25Level = (value, safetyLevels) => {
+  const sortedLevels = [...safetyLevels].sort((a, b) => a.maxValue - b.maxValue);
+  const level = sortedLevels.find(level => value <= level.maxValue);
+  return level ? level.label : sortedLevels[sortedLevels.length - 1].label;
+};
+
+const ShopPopup = ({ shop, safetyLevels }) => {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkCategory, setBookmarkCategory] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const checkBookmark = async () => {
+      try {
+        const { isBookmarked, category } = await checkBookmarkStatus(shop.id);
+        setIsBookmarked(isBookmarked);
+        setBookmarkCategory(category);
+      } catch (error) {
+        console.error("Error checking bookmark status:", error);
+      }
+    };
+    checkBookmark();
+  }, [shop.id]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const isOpen = () => {
     const now = new Date();
     const currentTime = now.getHours() + ":" + now.getMinutes();
     return currentTime >= shop.openTime && currentTime <= shop.closeTime;
+  };
+
+  const handleBookmark = async (category) => {
+    setIsLoading(true);
+    try {
+      if (isBookmarked) {
+        await removeBookmark(shop.id);
+        setIsBookmarked(false);
+        setBookmarkCategory(null);
+      } else {
+        await createBookmark(shop.id, category);
+        setIsBookmarked(true);
+        setBookmarkCategory(category);
+      }
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setIsLoading(false);
+      setShowDropdown(false);
+    }
+  };
+
+  const bookmarkCategories = [
+    { id: "favorite", label: "รายการโปรด", color: "text-yellow-500" },
+    { id: "wantToGo", label: "อยากไป", color: "text-blue-500" },
+    { id: "visited", label: "เคยไปมาแล้ว", color: "text-green-500" },
+    { id: "share", label: "อยากแชร์", color: "text-purple-500" },
+  ];
+
+  const getCategoryLabel = () => {
+    const category = bookmarkCategories.find(c => c.id === bookmarkCategory);
+    return category ? category.label : "";
   };
 
   return (
@@ -138,16 +148,18 @@ const ShopPopup = ({ shop }) => {
         <div className="flex items-center gap-2">
           <AlertTriangle
             className="w-4 h-4"
-            style={{ color: getPM25Color(shop.pm25) }}
+            style={{ color: getPM25Color(shop.pm25, safetyLevels) }}
           />
           <span
             className="text-sm font-medium"
-            style={{ color: getPM25Color(shop.pm25) }}
+            style={{ color: getPM25Color(shop.pm25, safetyLevels) }}
           >
             PM2.5: {shop.pm25} µg/m³
           </span>
         </div>
-        <div className="text-sm text-gray-600">{getPM25Level(shop.pm25)}</div>
+        <div className="text-sm text-gray-600">
+          {getPM25Level(shop.pm25, safetyLevels)}
+        </div>
         <div className="flex items-center gap-2 text-gray-600">
           <span className="text-sm">
             {shop.openTime} - {shop.closeTime} น.
@@ -182,6 +194,34 @@ const ShopPopup = ({ shop }) => {
             <Info className="w-4 h-4" />
             <span>ดูข้อมูล</span>
           </button>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => isBookmarked ? handleBookmark(null) : setShowDropdown(!showDropdown)}
+              disabled={isLoading}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors ${
+                isBookmarked
+                  ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  : "bg-gray-500 text-white hover:bg-gray-600"
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""}`} />
+              <span>{isBookmarked ? getCategoryLabel() : "บันทึก"}</span>
+            </button>
+            
+            {showDropdown && !isBookmarked && (
+              <div className="absolute right-0 mt-1 py-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                {bookmarkCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleBookmark(category.id)}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-100 ${category.color}`}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -191,11 +231,71 @@ const ShopPopup = ({ shop }) => {
 export default function HomeUser() {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [shops, setShops] = useState([]);
-  const [nearbyShops, setNearbyShops] = useState([]);
+  const [shopTypes, setShopTypes] = useState([
+    {
+      id: "all",
+      label: "ทั้งหมด",
+      icon: LayoutGrid,
+      color: "bg-amber-400 border-amber-500",
+      hoverColor: "hover:bg-amber-500",
+      activeTextColor: "text-amber-900",
+    }
+  ]);
   const [selectedShop, setSelectedShop] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [safetyLevels, setSafetyLevels] = useState([]);
+
+  const getTypeIcon = (type) => {
+    switch(type) {
+      case 'ที่กิน': return UtensilsCrossed;
+      case 'ที่เที่ยว': return Mountain;
+      case 'ที่ทำบุญ': return Church;
+      default: return LayoutGrid;
+    }
+  };
+
+  const getTypeColors = (type) => {
+    switch(type) {
+      case 'ที่กิน':
+        return {
+          color: "bg-rose-400 border-rose-500",
+          hoverColor: "hover:bg-rose-500",
+          activeTextColor: "text-rose-900",
+        };
+      case 'ที่เที่ยว':
+        return {
+          color: "bg-blue-400 border-blue-500",
+          hoverColor: "hover:bg-blue-500",
+          activeTextColor: "text-blue-900",
+        };
+      case 'ที่ทำบุญ':
+        return {
+          color: "bg-purple-400 border-purple-500",
+          hoverColor: "hover:bg-purple-500",
+          activeTextColor: "text-purple-900",
+        };
+      default:
+        return {
+          color: "bg-amber-400 border-amber-500",
+          hoverColor: "hover:bg-amber-500",
+          activeTextColor: "text-amber-900",
+        };
+    }
+  };
+
+  useEffect(() => {
+    const fetchSafetyLevels = async () => {
+      try {
+        const levels = await getAllSafetyLevels();
+        setSafetyLevels(levels);
+      } catch (error) {
+        console.error("Error fetching safety levels:", error);
+      }
+    };
+    fetchSafetyLevels();
+  }, []);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -221,9 +321,9 @@ export default function HomeUser() {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const allShops = await getAllShops();
+        const response = await getAllShops();
         const shopsWithPM25 = await Promise.all(
-          allShops.map(async (shop) => {
+          response.shops.map(async (shop) => {
             try {
               const pollutionData = await getAirPollutionData(
                 shop.latitude,
@@ -237,27 +337,31 @@ export default function HomeUser() {
           })
         );
         
-        console.log('Shops with PM2.5:', shopsWithPM25);
         setShops(shopsWithPM25);
-
-        if (currentLocation) {
-          const nearby = shopsWithPM25.filter(
-            (shop) =>
-              calculateDistance(
-                currentLocation.lat,
-                currentLocation.lng,
-                shop.latitude,
-                shop.longitude
-              ) <= SEARCH_RADIUS
-          );
-          setNearbyShops(nearby);
-        }
+  
+        // กำหนด types ที่ต้องการแสดง
+        const allowedTypes = ['ที่กิน', 'ที่เที่ยว', 'ที่ทำบุญ'];
+        
+        // Filter เฉพาะ types ที่ต้องการ
+        const filteredTypes = response.types.filter(type => allowedTypes.includes(type));
+  
+        // สร้าง filter types จาก filtered types
+        const apiTypes = filteredTypes.map(type => ({
+          id: type,
+          label: type,
+          icon: getTypeIcon(type),
+          ...getTypeColors(type)
+        }));
+  
+        // รวม all filter กับ filtered types
+        setShopTypes(prev => [...prev, ...apiTypes]);
+        
       } catch (error) {
         console.error("Error fetching shops:", error);
         setError("ไม่สามารถดึงข้อมูลร้านค้าได้");
       }
     };
-
+  
     if (currentLocation) {
       fetchShops();
     }
@@ -287,7 +391,7 @@ export default function HomeUser() {
     );
   }
 
-  const filteredShops = nearbyShops.filter((shop) =>
+  const filteredShops = shops.filter((shop) =>
     activeFilter === "all" ? true : shop.type === activeFilter
   );
 
@@ -300,7 +404,7 @@ export default function HomeUser() {
     <div className="relative w-full h-full">
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] p-1.5">
         <div className="flex gap-2">
-          {FILTER_TYPES.map((type) => (
+          {shopTypes.map((type) => (
             <FilterButton
               key={type.id}
               type={type}
@@ -321,17 +425,6 @@ export default function HomeUser() {
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-
-        <Circle
-          center={[currentLocation.lat, currentLocation.lng]}
-          radius={SEARCH_RADIUS * 1000}
-          pathOptions={{
-            color: "blue",
-            fillColor: "#a0c4ff",
-            fillOpacity: 0.2,
-            weight: 1,
-          }}
         />
 
         <Marker
@@ -355,7 +448,7 @@ export default function HomeUser() {
                 <div class="relative">
                   <div class="absolute -translate-x-1/2 -translate-y-1/2">
                     <div class="flex items-center justify-center w-12 h-12 rounded-full text-white text-sm font-bold" 
-                         style="background-color: ${getPM25Color(shop.pm25)}">
+                         style="background-color: ${getPM25Color(shop.pm25, safetyLevels)}">
                       ${shop.pm25}
                     </div>
                   </div>
@@ -367,7 +460,7 @@ export default function HomeUser() {
             }}
           >
             <Popup>
-              <ShopPopup shop={shop} />
+              <ShopPopup shop={shop} safetyLevels={safetyLevels} />
             </Popup>
           </Marker>
         ))}

@@ -1,8 +1,17 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Star, MapPin, Phone, Clock, Flag, X, ThumbsUp } from "lucide-react";
+import {
+  Star,
+  MapPin,
+  Phone,
+  Clock,
+  Flag,
+  X,
+  ThumbsUp,
+  MessageSquare,
+} from "lucide-react";
 import { getShopById } from "../../api/shop";
 import {
   getShopReviews,
@@ -10,6 +19,7 @@ import {
   reportReview,
   likeReview,
   calculateAverageRating,
+  checkUserShopReview,
 } from "../../api/reviews";
 import useDusthStore from "../../Global Store/DusthStore";
 
@@ -87,12 +97,32 @@ const ReportReviewPopup = ({ review, onClose, onReport }) => {
   );
 };
 
+const ShopReplySection = ({ reply }) => {
+  if (!reply) return null;
+
+  return (
+    <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-100">
+      <div className="flex items-start gap-3">
+        <MessageSquare className="w-5 h-5 text-blue-500 mt-1" />
+        <div>
+          <h4 className="font-semibold text-blue-700 mb-1">
+            การตอบกลับจากร้านค้า
+          </h4>
+          <p className="text-gray-700">{reply}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ShopDetail = () => {
   const { id } = useParams();
   const userToken = useDusthStore((state) => state.token);
   const [shop, setShop] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [selectedReviewToReport, setSelectedReviewToReport] = useState(null);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [userLikes, setUserLikes] = useState(new Set());
   const [newReview, setNewReview] = useState({
     content: "",
     rating: 5,
@@ -109,6 +139,11 @@ const ShopDetail = () => {
         ]);
         setShop(shopData);
         setReviews(reviewsData);
+
+        if (userToken) {
+          const hasReviewed = await checkUserShopReview(userToken, id);
+          setHasReviewed(hasReviewed);
+        }
       } catch (err) {
         toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
       } finally {
@@ -116,7 +151,7 @@ const ShopDetail = () => {
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, userToken]);
 
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
@@ -124,6 +159,12 @@ const ShopDetail = () => {
       toast.error("กรุณาเข้าสู่ระบบก่อนส่งรีวิว");
       return;
     }
+
+    if (hasReviewed) {
+      toast.error("คุณได้รีวิวร้านนี้ไปแล้ว");
+      return;
+    }
+
     try {
       const response = await createReview(userToken, {
         ...newReview,
@@ -131,6 +172,7 @@ const ShopDetail = () => {
       });
       setReviews([response, ...reviews]);
       setNewReview({ content: "", rating: 5, comment: "" });
+      setHasReviewed(true);
       toast.success("ส่งรีวิวสำเร็จ");
     } catch (err) {
       toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
@@ -166,6 +208,16 @@ const ShopDetail = () => {
             : review
         )
       );
+
+      setUserLikes((prev) => {
+        const newLikes = new Set(prev);
+        if (newLikes.has(reviewId)) {
+          newLikes.delete(reviewId);
+        } else {
+          newLikes.add(reviewId);
+        }
+        return newLikes;
+      });
 
     } catch (err) {
       toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
@@ -234,48 +286,54 @@ const ShopDetail = () => {
 
       {/* Review Form */}
       {userToken ? (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">เขียนรีวิว</h2>
-          <form onSubmit={handleReviewSubmit} className="space-y-4">
-            <div>
-              <label className="block mb-2">คะแนน</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((rating) => (
-                  <button
-                    key={rating}
-                    type="button"
-                    onClick={() => setNewReview({ ...newReview, rating })}
-                    className="focus:outline-none"
-                  >
-                    <Star
-                      className={`w-7 h-7 ${
-                        rating <= newReview.rating
-                          ? "text-yellow-400 fill-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  </button>
-                ))}
+        hasReviewed ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <p className="text-yellow-700">คุณได้รีวิวร้านนี้ไปแล้ว</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">เขียนรีวิว</h2>
+            <form onSubmit={handleReviewSubmit} className="space-y-4">
+              <div>
+                <label className="block mb-2">คะแนน</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      type="button"
+                      onClick={() => setNewReview({ ...newReview, rating })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${
+                          rating <= newReview.rating
+                            ? "text-yellow-400 fill-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <textarea
-              value={newReview.content}
-              onChange={(e) =>
-                setNewReview({ ...newReview, content: e.target.value })
-              }
-              className="w-full p-3 border rounded-lg"
-              placeholder="เขียนรีวิวของคุณ"
-              rows="4"
-              required
-            />
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
-            >
-              ส่งรีวิว
-            </button>
-          </form>
-        </div>
+              <textarea
+                value={newReview.content}
+                onChange={(e) =>
+                  setNewReview({ ...newReview, content: e.target.value })
+                }
+                className="w-full p-3 border rounded-lg"
+                placeholder="เขียนรีวิวของคุณ"
+                rows="4"
+                required
+              />
+              <button
+                type="submit"
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
+              >
+                ส่งรีวิว
+              </button>
+            </form>
+          </div>
+        )
       ) : (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <p className="text-yellow-700">กรุณาเข้าสู่ระบบเพื่อเขียนรีวิว</p>
@@ -295,7 +353,7 @@ const ShopDetail = () => {
                 className="border-b pb-4 last:border-b-0 hover:bg-gray-50 p-3 rounded-lg transition"
               >
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="w-full">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-semibold">{review.user?.name}</span>
                       <div className="flex">
@@ -312,29 +370,32 @@ const ShopDetail = () => {
                       </div>
                     </div>
                     <p className="text-gray-700">{review.content}</p>
-
-                    {/* Like Section */}
-                    <div className="flex items-center gap-2 mt-2">
+                    {/* Like and Action Buttons */}
+                    <div className="flex items-center gap-4 mt-3">
                       <button
                         onClick={() => handleLikeReview(review.id)}
-                        className="flex items-center text-gray-600 hover:text-blue-500 transition"
-                        disabled={!userToken}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
+                          userLikes.has(review.id)
+                            ? "bg-blue-100 text-blue-600"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
                       >
-                        <ThumbsUp className="w-4 h-4 mr-1" />
-                        <span>{review.likes || 0}</span>
+                        <ThumbsUp className="w-4 h-4" />
+                        <span>{review.likes?.length || 0}</span>
                       </button>
-                    </div>
-                  </div>
-                  {userToken && (
-                    <div className="flex items-center gap-2">
+
                       <button
                         onClick={() => setSelectedReviewToReport(review)}
-                        className="text-gray-500 hover:text-red-500 transition"
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
                       >
-                        <Flag className="w-5 h-5" />
+                        <Flag className="w-4 h-4" />
+                        <span>รายงาน</span>
                       </button>
                     </div>
-                  )}
+
+                    {/* Shop Reply Section */}
+                    <ShopReplySection reply={review.reply} />
+                  </div>
                 </div>
               </div>
             ))}
@@ -351,8 +412,9 @@ const ShopDetail = () => {
         />
       )}
 
+      {/* Toast Container */}
       <ToastContainer
-        position="top-right"
+        position="bottom-right"
         autoClose={3000}
         hideProgressBar={false}
         newestOnTop={false}

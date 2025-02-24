@@ -78,6 +78,30 @@ export const likeReview = async (token, reviewId) => {
   return response.data;
 };
 
+export const checkUserReviewLike = async (token, reviewId) => {
+  const response = await axios.get(
+    `${API}/reviews/${reviewId}/liked`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data.liked;
+};
+
+export const checkUserShopReview = async (token, shopId) => {
+  const response = await axios.get(
+    `${API}/reviews/user/shop/${shopId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data.hasReviewed;
+};
+
 // Shop owner reply to review
 export const replyToReview = async (token, reviewId, reply) => {
   if (!reply || reply.trim().length === 0) {
@@ -132,3 +156,4 @@ export const moderateReview = async (token, reviewId, status) => {
   );
   return response.data;
 };
+

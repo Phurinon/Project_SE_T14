@@ -17,6 +17,7 @@ const ReviewCard = ({ review, isShopOwner, onReplySubmit }) => {
 
     try {
       await onReplySubmit(review.id, replyText);
+      setReplyText("");
       toast.success("ตอบกลับรีวิวสำเร็จ");
       setIsReplying(false);
     } catch (error) {
@@ -25,17 +26,23 @@ const ReviewCard = ({ review, isShopOwner, onReplySubmit }) => {
     }
   };
 
+  // ถ้าไม่มีข้อมูล user ให้แสดง placeholder หรือข้อความทดแทน
+  const userName = review.user?.name || "ผู้ใช้";
+  const userAvatar = review.user?.name 
+    ? `https://robohash.org/${review.user.name}?size=40x40`
+    : `https://robohash.org/default?size=40x40`;
+
   return (
     <div className="border rounded-lg p-4 mb-4 bg-white shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           <img
-            src={`https://robohash.org/${review.user.name}?size=40x40`}
+            src={userAvatar}
             alt="User avatar"
             className="w-10 h-10 rounded-full"
           />
           <div>
-            <h3 className="font-medium">{review.user.name}</h3>
+            <h3 className="font-medium">{userName}</h3>
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
                 <Star
@@ -59,7 +66,17 @@ const ReviewCard = ({ review, isShopOwner, onReplySubmit }) => {
         </span>
       </div>
 
-      <p className="text-gray-700 mb-2">{review.comment}</p>
+      {review.content && (
+        <div className="mb-2">
+          <p className="text-gray-700">{review.content}</p>
+        </div>
+      )}
+
+      {review.comment && (
+        <div className="mb-2">
+          <p className="text-gray-700">{review.comment}</p>
+        </div>
+      )}
 
       {review.reply && (
         <div className="bg-gray-50 p-3 rounded-lg ml-8 mb-2">
@@ -118,10 +135,7 @@ const Reviews = () => {
       try {
         setLoading(true);
         const shop = await getMyShop(token);
-        // console.log("Shop data:", shop);
-
         const shopReviews = await getShopReviews(shop.id);
-        // console.log("Shop Reviews:", shopReviews);
 
         const approvedReviews = shopReviews.filter(
           (review) =>
@@ -151,12 +165,17 @@ const Reviews = () => {
   const handleReplyToReview = async (reviewId, replyText) => {
     try {
       const updatedReview = await replyToReview(token, reviewId, replyText);
-
+      
+      // อัพเดทข้อมูลรีวิวในส่วนของ state โดยรักษาข้อมูล user เดิมไว้
       setReviews((prevReviews) =>
         prevReviews.map((review) =>
-          review.id === reviewId ? updatedReview : review
+          review.id === reviewId
+            ? { ...review, ...updatedReview }
+            : review
         )
       );
+      
+      return updatedReview;
     } catch (error) {
       console.error("Error replying to review:", error);
       throw error;

@@ -19,6 +19,7 @@ import ProtectRouteUser from "./ProtectRouteUser";
 import ProtectRouteShop from "./ProtectRouteShop";
 import ProtectRouteAdmin from "./ProtectRouteAdmin";
 import CreateShop from "../pages/user/CreateShop";
+import Bookmark from "../pages/user/Bookmark";
 
 const router = createBrowserRouter([
   // landing
@@ -56,6 +57,7 @@ const router = createBrowserRouter([
     element: <ProtectRouteUser element={<UserLayout />} />,
     children: [
       { index: true, element: <HomeUser /> },
+      { path: "bookmark", element: <Bookmark /> },
       { path: "shop/:id", element: <Shopdetail /> },
       { path: "create-shop", element: <CreateShop /> },
     ],
