@@ -78,28 +78,50 @@ export const likeReview = async (token, reviewId) => {
   return response.data;
 };
 
+// Check if user has liked a review
 export const checkUserReviewLike = async (token, reviewId) => {
-  const response = await axios.get(
-    `${API}/reviews/${reviewId}/liked`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  return response.data.liked;
+  try {
+    const response = await axios.get(
+      `${API}/reviews/${reviewId}/liked`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data.liked;
+  } catch (error) {
+    console.log("Error checking review like:", error);
+    return false;
+  }
 };
 
+// Check if user has reviewed a shop
+// Modified to handle missing endpoint
 export const checkUserShopReview = async (token, shopId) => {
-  const response = await axios.get(
-    `${API}/reviews/user/shop/${shopId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-  return response.data.hasReviewed;
+  try {
+    // First check if the endpoint exists
+    const reviews = await getShopReviews(shopId);
+    
+    // If no token, user is not logged in so can't have reviewed
+    if (!token) return false;
+    
+    // Extract user ID from token or token object
+    const userId = typeof token === 'object' ? token.userId : null;
+    
+    // If we can't get user ID, assume not reviewed
+    if (!userId) return false;
+    
+    // Check if any review is from this user
+    const userReviews = reviews.filter(review => 
+      review.userId === userId || (review.user && review.user.id === userId)
+    );
+    
+    return userReviews.length > 0;
+  } catch (error) {
+    console.log("Error checking if user reviewed shop:", error);
+    return false; // Assume user hasn't reviewed if there's an error
+  }
 };
 
 // Shop owner reply to review
@@ -156,4 +178,3 @@ export const moderateReview = async (token, reviewId, status) => {
   );
   return response.data;
 };
-

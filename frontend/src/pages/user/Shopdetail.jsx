@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,8 +9,16 @@ import {
   Clock,
   Flag,
   X,
-  ThumbsUp,
   MessageSquare,
+  Camera,
+  Calendar,
+  Award,
+  User,
+  Heart,
+  Info,
+  Send,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { getShopById } from "../../api/shop";
 import {
@@ -37,30 +45,33 @@ const ReportReviewPopup = ({ review, onClose, onReport }) => {
       await onReport(review.id, reason);
       onClose();
     } catch (err) {
-      setError(err.message);
+      console.log(err);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md relative">
+    <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md relative border-l-4 border-red-500">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors"
         >
           <X className="w-6 h-6" />
         </button>
 
-        <div className="flex items-center mb-4">
-          <Flag className="mr-2 text-red-500 w-6 h-6" />
-          <h2 className="text-xl font-bold text-red-600">รายงานรีวิว</h2>
+        <div className="flex items-center mb-6">
+          <Flag className="mr-3 text-red-500 w-6 h-6" />
+          <h2 className="text-xl font-bold text-gray-800">รายงานรีวิว</h2>
         </div>
 
-        <div className="mb-4 bg-gray-50 p-3 rounded-lg">
-          <label className="block mb-2 text-gray-700">
-            รีวิวของ: <span className="font-semibold">{review.user?.name}</span>
-          </label>
-          <p className="text-gray-600 italic">"{review.content}"</p>
+        <div className="mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="flex items-center gap-2 mb-2">
+            <User className="w-4 h-4 text-gray-600" />
+            <span className="font-semibold text-gray-800">
+              {review.user?.name}
+            </span>
+          </div>
+          <p className="text-gray-700 italic pl-6">"{review.content}"</p>
         </div>
 
         <textarea
@@ -69,26 +80,30 @@ const ReportReviewPopup = ({ review, onClose, onReport }) => {
             setReason(e.target.value);
             setError("");
           }}
-          className="w-full p-3 border-2 border-gray-200 rounded-lg mb-4 focus:ring-2 focus:ring-red-200 transition-all"
+          className="w-full p-4 border-2 border-gray-200 rounded-xl mb-4 focus:ring-2 focus:ring-red-200 focus:border-red-300 transition-all outline-none text-gray-700"
           placeholder="เหตุผลในการรายงาน (เช่น เนื้อหาไม่เหมาะสม)"
           rows="4"
         />
 
         {error && (
-          <p className="text-red-500 mb-4 bg-red-50 p-2 rounded">{error}</p>
+          <p className="text-red-500 mb-4 bg-red-50 p-3 rounded-lg flex items-center">
+            <Info className="w-5 h-5 mr-2 text-red-500" />
+            {error}
+          </p>
         )}
 
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+            className="px-5 py-2.5 bg-gray-100 rounded-xl hover:bg-gray-200 transition text-gray-700 font-medium"
           >
             ยกเลิก
           </button>
           <button
             onClick={handleReport}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            className="px-5 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-medium flex items-center"
           >
+            <Flag className="w-4 h-4 mr-2" />
             รายงาน
           </button>
         </div>
@@ -101,9 +116,9 @@ const ShopReplySection = ({ reply }) => {
   if (!reply) return null;
 
   return (
-    <div className="mt-4 bg-blue-50 rounded-lg p-4 border border-blue-100">
+    <div className="mt-4 bg-blue-50 rounded-xl p-4 border border-blue-100">
       <div className="flex items-start gap-3">
-        <MessageSquare className="w-5 h-5 text-blue-500 mt-1" />
+        <MessageSquare className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
         <div>
           <h4 className="font-semibold text-blue-700 mb-1">
             การตอบกลับจากร้านค้า
@@ -115,6 +130,66 @@ const ShopReplySection = ({ reply }) => {
   );
 };
 
+// Component for image gallery with lightbox
+const ImageGallery = ({ images }) => {
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  if (!images || images.length === 0) return null;
+
+  return (
+    <>
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Camera className="w-5 h-5 text-[#212329]" />
+          <h3 className="text-lg font-bold text-[#212329]">รูปภาพร้านค้า</h3>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {images.map((img, index) => (
+            <div
+              key={index}
+              className="relative rounded-xl overflow-hidden group cursor-pointer shadow-sm hover:shadow-md transition"
+              onClick={() => setSelectedImage(img)}
+            >
+              <img
+                src={img.secure_url}
+                alt={`รูปภาพร้านค้า ${index + 1}`}
+                className="w-full h-48 object-cover transition duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition">
+                  <span className="bg-white p-2 rounded-full">
+                    <Info className="w-4 h-4 text-[#212329]" />
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition"
+            onClick={() => setSelectedImage(null)}
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <img
+            src={selectedImage.secure_url}
+            alt="รูปขยาย"
+            className="max-w-full max-h-[85vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
+  );
+};
+
 const ShopDetail = () => {
   const { id } = useParams();
   const userToken = useDusthStore((state) => state.token);
@@ -123,33 +198,87 @@ const ShopDetail = () => {
   const [selectedReviewToReport, setSelectedReviewToReport] = useState(null);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [userLikes, setUserLikes] = useState(new Set());
+  const [expandedDescription, setExpandedDescription] = useState(false);
   const [newReview, setNewReview] = useState({
     content: "",
     rating: 5,
     comment: "",
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Get shop data and reviews in parallel
         const [shopData, reviewsData] = await Promise.all([
           getShopById(id),
           getShopReviews(id),
         ]);
+  
         setShop(shopData);
-        setReviews(reviewsData);
-
+        setReviews(reviewsData || []);
+  
+        // Initialize userLikes set based on reviews the user has already liked
+        if (userToken && reviewsData) {
+          const userId = typeof userToken === "object" ? userToken.userId : null;
+          if (userId) {
+            const likedReviews = new Set(
+              reviewsData
+                .filter(review => 
+                  Array.isArray(review.likes) && 
+                  review.likes.some(like => like.userId === userId)
+                )
+                .map(review => review.id)
+            );
+            setUserLikes(likedReviews);
+          }
+        }
+  
+        // Check if user has already reviewed this shop
         if (userToken) {
-          const hasReviewed = await checkUserShopReview(userToken, id);
-          setHasReviewed(hasReviewed);
+          try {
+            // ตรวจสอบโดยตรงจาก reviews ก่อน (เป็นวิธีที่แน่นอนกว่า)
+            const userId = typeof userToken === "object" ? userToken.userId : null;
+            if (userId && reviewsData) {
+              const userReview = reviewsData.find(
+                (review) =>
+                  review.userId === userId ||
+                  (review.user && review.user.id === userId)
+              );
+              
+              if (userReview) {
+                setHasReviewed(true);
+                return; // หากพบแล้วให้ออกจาก block นี้เลย
+              }
+            }
+            
+            // ถ้ายังไม่พบจาก reviews ค่อยเรียก API
+            const hasReviewed = await checkUserShopReview(userToken, id);
+            setHasReviewed(hasReviewed);
+          } catch (err) {
+            console.log("Error checking if user reviewed shop:", err);
+            // ยังคงการตรวจสอบจาก reviews โดยตรงไว้เป็น fallback
+            const userId = typeof userToken === "object" ? userToken.userId : null;
+            if (userId) {
+              const userReviews = reviewsData.filter(
+                (review) =>
+                  review.userId === userId ||
+                  (review.user && review.user.id === userId)
+              );
+              setHasReviewed(userReviews.length > 0);
+            }
+          }
         }
       } catch (err) {
-        toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
+        console.log("Error fetching shop data:", err);
+        setError("ไม่สามารถโหลดข้อมูลร้านค้าได้");
+        toast.error("ไม่สามารถโหลดข้อมูลร้านค้าได้");
       } finally {
         setLoading(false);
       }
     };
+  
     fetchData();
   }, [id, userToken]);
 
@@ -165,6 +294,11 @@ const ShopDetail = () => {
       return;
     }
 
+    if (!newReview.content.trim()) {
+      toast.error("กรุณาเขียนเนื้อหารีวิว");
+      return;
+    }
+
     try {
       const response = await createReview(userToken, {
         ...newReview,
@@ -175,7 +309,8 @@ const ShopDetail = () => {
       setHasReviewed(true);
       toast.success("ส่งรีวิวสำเร็จ");
     } catch (err) {
-      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
+      console.log("Error creating review:", err);
+      toast.error("ไม่สามารถส่งรีวิวได้คุณเคยรีวิวร้านนี้ไปแล้ว");
     }
   };
 
@@ -198,17 +333,43 @@ const ShopDetail = () => {
       toast.error("กรุณาเข้าสู่ระบบก่อนกดไลค์");
       return;
     }
+    
     try {
       const response = await likeReview(userToken, reviewId);
-
-      setReviews(
-        reviews.map((review) =>
-          review.id === reviewId
-            ? { ...review, likes: response.review.likes }
-            : review
-        )
-      );
-
+      
+      // Update the reviews state with the returned data from the API
+      if (response && response.review) {
+        setReviews(
+          reviews.map((review) =>
+            review.id === reviewId ? { ...review, likes: response.review.likes } : review
+          )
+        );
+      } else {
+        // If the API doesn't return the updated review, handle it locally
+        setReviews(
+          reviews.map((review) => {
+            if (review.id === reviewId) {
+              const userId = typeof userToken === "object" ? userToken.userId : null;
+              const userLiked = userLikes.has(reviewId);
+              
+              // Create a proper likes array based on current state
+              const updatedLikes = userLiked
+                ? (Array.isArray(review.likes) 
+                  ? review.likes.filter(like => like.userId !== userId) 
+                  : [])
+                : [
+                  ...(Array.isArray(review.likes) ? review.likes : []),
+                  { userId: userId }
+                ];
+                
+              return { ...review, likes: updatedLikes };
+            }
+            return review;
+          })
+        );
+      }
+      
+      // Toggle the like in userLikes Set
       setUserLikes((prev) => {
         const newLikes = new Set(prev);
         if (newLikes.has(reviewId)) {
@@ -218,94 +379,202 @@ const ShopDetail = () => {
         }
         return newLikes;
       });
-
+      
     } catch (err) {
-      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
+      console.log("Error liking review:", err);
+      toast.error(`เกิดข้อผิดพลาด: ${err.message || "ไม่สามารถกดไลค์ได้"}`);
     }
   };
 
   if (loading)
-    return <div className="flex justify-center p-8">กำลังโหลด...</div>;
-  if (!shop) return <div className="p-8">ไม่พบร้านค้า</div>;
+    return (
+      <div className="flex justify-center items-center p-20 h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-t-[#212329] border-opacity-20 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#212329] font-medium">
+            กำลังโหลดข้อมูลร้านค้า...
+          </p>
+        </div>
+      </div>
+    );
+
+  if (error || !shop) {
+    return (
+      <div className="p-8 text-center">
+        <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-gray-700">ไม่พบร้านค้า</h2>
+        <p className="text-gray-500 mt-2">
+          ร้านค้าที่คุณกำลังค้นหาอาจถูกลบหรือไม่มีอยู่ในระบบ
+        </p>
+      </div>
+    );
+  }
 
   const averageRating = calculateAverageRating(reviews);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 bg-gray-50 min-h-screen">
-      {/* Shop Details Card */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-t-4 border-blue-500">
-        <h1 className="text-3xl font-bold mb-4 text-gray-800">{shop.name}</h1>
-
-        {/* Rating Display */}
-        <div className="flex items-center gap-2 mb-4">
-          {[...Array(5)].map((_, i) => (
-            <Star
-              key={i}
-              className={`w-6 h-6 ${
-                i < Math.round(averageRating)
-                  ? "text-yellow-400 fill-yellow-400"
-                  : "text-gray-300"
-              }`}
+    <div className="max-w-4xl mx-auto p-4 bg-gray-50 min-h-screen pb-20">
+      {/* Shop Header - Hero Section */}
+      <div className="relative mb-6 overflow-hidden rounded-2xl shadow-lg">
+        {shop.images && shop.images.length > 0 ? (
+          <div className="h-48 md:h-64 w-full">
+            <img
+              src={shop.images[0].secure_url}
+              alt={shop.name}
+              className="w-full h-full object-cover"
             />
-          ))}
-          <span className="text-gray-600 font-semibold">
-            ({averageRating.toFixed(1)} จาก {reviews.length} รีวิว)
-          </span>
-        </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#212329] to-transparent"></div>
+          </div>
+        ) : (
+          <div className="h-48 md:h-64 w-full bg-gradient-to-r from-[#212329] to-gray-700"></div>
+        )}
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <MapPin className="w-6 h-6 text-blue-500" />
-            <span>{shop.address}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Phone className="w-6 h-6 text-green-500" />
-            <span>{shop.phone}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Clock className="w-6 h-6 text-purple-500" />
-            <span>
-              {shop.openTime} - {shop.closeTime}
+        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+          <h1 className="text-3xl font-bold mb-2">{shop.name}</h1>
+          <div className="flex items-center gap-2 mb-1">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-5 h-5 ${
+                  i < Math.round(averageRating)
+                    ? "text-yellow-400 fill-yellow-400"
+                    : "text-gray-300"
+                }`}
+              />
+            ))}
+            <span className="text-white font-semibold">
+              ({averageRating.toFixed(1)})
+            </span>
+            <span className="text-gray-200 text-sm">
+              จาก {reviews.length} รีวิว
             </span>
           </div>
         </div>
-        <p className="text-gray-700 mt-6">{shop.description}</p>
+      </div>
 
-        {/* Shop Images */}
-        <div className="grid grid-cols-2 gap-4 mt-6 justify-items-center">
-          {shop.images?.map((img, index) => (
-            <img
-              key={index}
-              src={img.secure_url}
-              alt={`${shop.name} ${index + 1}`}
-              className="rounded-lg w-full h-48 object-cover"
-            />
-          ))}
+      {/* Shop Details Card */}
+      <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-l-4 border-[#212329]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-[#212329] flex items-center">
+              <Info className="w-5 h-5 mr-2" />
+              ข้อมูลร้านค้า
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#212329] text-white">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">ที่อยู่</div>
+                  <span className="text-gray-800">{shop.address}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#212329] text-white">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">เบอร์โทร</div>
+                  <span className="text-gray-800">{shop.phone}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-[#212329] text-white">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">เวลาเปิด-ปิด</div>
+                  <span className="text-gray-800">
+                    {shop.openTime} - {shop.closeTime}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-bold mb-4 text-[#212329] flex items-center">
+              <Award className="w-5 h-5 mr-2" />
+              เกี่ยวกับร้าน
+            </h2>
+            <div
+              className={`text-gray-700 relative ${
+                !expandedDescription && shop.description?.length > 150
+                  ? "max-h-28 overflow-hidden"
+                  : ""
+              }`}
+            >
+              <p>{shop.description}</p>
+              {!expandedDescription && shop.description?.length > 150 && (
+                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent"></div>
+              )}
+            </div>
+            {shop.description?.length > 150 && (
+              <button
+                onClick={() => setExpandedDescription(!expandedDescription)}
+                className="mt-2 flex items-center text-[#212329] hover:text-gray-700 font-medium text-sm"
+              >
+                {expandedDescription ? (
+                  <>
+                    <ChevronUp className="w-4 h-4 mr-1" />
+                    แสดงน้อยลง
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4 mr-1" />
+                    อ่านเพิ่มเติม
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Shop Images Gallery */}
+        <ImageGallery images={shop.images} />
       </div>
 
       {/* Review Form */}
       {userToken ? (
-        hasReviewed ? (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <p className="text-yellow-700">คุณได้รีวิวร้านนี้ไปแล้ว</p>
+        hasReviewed ||
+        reviews.some(
+          (review) =>
+            review.userId ===
+              (typeof userToken === "object" ? userToken.userId : null) ||
+            (review.user &&
+              review.user.id ===
+                (typeof userToken === "object" ? userToken.userId : null))
+        ) ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-yellow-600" />
+              <p className="text-yellow-700">คุณได้รีวิวร้านนี้ไปแล้ว</p>
+            </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">เขียนรีวิว</h2>
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-l-4 border-green-500">
+            <h2 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+              <MessageSquare className="w-5 h-5 mr-2 text-green-500" />
+              เขียนรีวิว
+            </h2>
             <form onSubmit={handleReviewSubmit} className="space-y-4">
-              <div>
-                <label className="block mb-2">คะแนน</label>
+              <div className="p-4 bg-gray-50 rounded-xl">
+                <label className="block mb-2 font-medium text-gray-700">
+                  ให้คะแนนร้านค้า
+                </label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((rating) => (
                     <button
                       key={rating}
                       type="button"
                       onClick={() => setNewReview({ ...newReview, rating })}
-                      className="focus:outline-none"
+                      className="focus:outline-none transition transform hover:scale-110"
                     >
                       <Star
-                        className={`w-7 h-7 ${
+                        className={`w-8 h-8 ${
                           rating <= newReview.rating
                             ? "text-yellow-400 fill-yellow-400"
                             : "text-gray-300"
@@ -315,86 +584,128 @@ const ShopDetail = () => {
                   ))}
                 </div>
               </div>
-              <textarea
-                value={newReview.content}
-                onChange={(e) =>
-                  setNewReview({ ...newReview, content: e.target.value })
-                }
-                className="w-full p-3 border rounded-lg"
-                placeholder="เขียนรีวิวของคุณ"
-                rows="4"
-                required
-              />
+              <div>
+                <label className="block mb-2 font-medium text-gray-700">
+                  ความคิดเห็นของคุณ
+                </label>
+                <textarea
+                  value={newReview.content}
+                  onChange={(e) =>
+                    setNewReview({ ...newReview, content: e.target.value })
+                  }
+                  className="w-full p-4 border rounded-xl focus:ring-2 focus:ring-green-200 focus:border-green-300 transition-all outline-none"
+                  placeholder="แชร์ประสบการณ์ของคุณเกี่ยวกับร้านนี้..."
+                  rows="4"
+                  required
+                />
+              </div>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
+                className="bg-[#212329] text-white px-6 py-3 rounded-xl hover:bg-gray-800 transition flex items-center justify-center font-medium"
               >
+                <Send className="w-4 h-4 mr-2" />
                 ส่งรีวิว
               </button>
             </form>
           </div>
         )
       ) : (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <p className="text-yellow-700">กรุณาเข้าสู่ระบบเพื่อเขียนรีวิว</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <User className="w-5 h-5 text-blue-600" />
+            <p className="text-blue-700">กรุณาเข้าสู่ระบบเพื่อเขียนรีวิว</p>
+          </div>
         </div>
       )}
 
       {/* Reviews List */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-gray-800">รีวิวทั้งหมด</h2>
+      <div className="bg-white rounded-2xl shadow-md p-6">
+        <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center border-b pb-4">
+          <MessageSquare className="w-5 h-5 mr-2 text-[#212329]" />
+          รีวิวทั้งหมด
+          <span className="ml-2 bg-[#212329] text-white text-sm py-1 px-2 rounded-full">
+            {reviews.length}
+          </span>
+        </h2>
+
         {reviews.length === 0 ? (
-          <p className="text-gray-500 text-center">ยังไม่มีรีวิว</p>
+          <div className="text-center py-8">
+            <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">
+              ยังไม่มีรีวิว เป็นคนแรกที่รีวิวร้านนี้
+            </p>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {reviews.map((review) => (
-              <div
-                key={review.id}
-                className="border-b pb-4 last:border-b-0 hover:bg-gray-50 p-3 rounded-lg transition"
-              >
+              <div key={review.id} className="border-b pb-6 last:border-b-0">
                 <div className="flex justify-between items-start">
                   <div className="w-full">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold">{review.user?.name}</span>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-4 h-4 ${
-                              i < review.rating
-                                ? "text-yellow-400 fill-yellow-400"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-full bg-[#212329] text-white flex items-center justify-center">
+                        <User className="w-4 h-4" />
                       </div>
-                    </div>
-                    <p className="text-gray-700">{review.content}</p>
-                    {/* Like and Action Buttons */}
-                    <div className="flex items-center gap-4 mt-3">
-                      <button
-                        onClick={() => handleLikeReview(review.id)}
-                        className={`flex items-center gap-1 px-3 py-1 rounded-lg transition ${
-                          userLikes.has(review.id)
-                            ? "bg-blue-100 text-blue-600"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        <ThumbsUp className="w-4 h-4" />
-                        <span>{review.likes?.length || 0}</span>
-                      </button>
+                      <div>
+                        <span className="font-semibold text-gray-800">
+                          {review.user?.name}
+                        </span>
+                        <div className="flex">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${
+                                i < review.rating
+                                  ? "text-yellow-400 fill-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
 
-                      <button
-                        onClick={() => setSelectedReviewToReport(review)}
-                        className="flex items-center gap-1 px-3 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
-                      >
-                        <Flag className="w-4 h-4" />
-                        <span>รายงาน</span>
-                      </button>
+                      {review.createdAt && (
+                        <span className="text-xs text-gray-500 flex items-center ml-auto">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {new Date(review.createdAt).toLocaleDateString(
+                            "th-TH"
+                          )}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Shop Reply Section */}
-                    <ShopReplySection reply={review.reply} />
+                    <div className="pl-10">
+                      <p className="text-gray-700 mb-3">{review.content}</p>
+
+                      {/* Like and Action Buttons */}
+                      <div className="flex items-center gap-4 mt-3">
+                        <button
+                          onClick={() => handleLikeReview(review.id)}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition ${
+                            userLikes.has(review.id)
+                              ? "bg-red-50 text-red-600 border border-red-100"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200 border border-transparent"
+                          }`}
+                        >
+                          {userLikes.has(review.id) ? (
+                            <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+                          ) : (
+                            <Heart className="w-4 h-4" />
+                          )}
+                          <span>{review.likes.length || 0}</span>
+                        </button>
+
+                        <button
+                          onClick={() => setSelectedReviewToReport(review)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition border border-transparent"
+                        >
+                          <Flag className="w-4 h-4" />
+                          <span>รายงาน</span>
+                        </button>
+                      </div>
+
+                      {/* Shop Reply Section */}
+                      <ShopReplySection reply={review.reply} />
+                    </div>
                   </div>
                 </div>
               </div>

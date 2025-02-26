@@ -24,12 +24,10 @@ router.get("/shop/:shopId", async (req, res) => {
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
     });
     res.json(reviews);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Error fetching reviews" });
   }
 });
@@ -76,11 +74,8 @@ router.post("/", authenticateUser, async (req, res) => {
 
     res.status(201).json(review);
   } catch (error) {
-    if (error.code === 'P2002') {
-      res.status(400).json({ message: "You have already reviewed this shop" });
-    } else {
+      console.log(error);
       res.status(500).json({ message: "Error creating review" });
-    }
   }
 });
 
