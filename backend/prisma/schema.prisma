@@ -21,6 +21,14 @@ model User {
   comments  Comment[] // User can have comments
 }
 
+model UserGoogle {
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  googleId  String? @unique
+  name      String?
+  createdAt DateTime @default(now())
+}
+
 model Shop {
   id          Int          @id @default(autoincrement())
   name        String
