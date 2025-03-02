@@ -1,6 +1,28 @@
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma.js");
 
+const authenticateGoogle = async(req, res, next)=>{
+  try{
+    const headerToken = req.headers.authorization;
+    if (!headerToken) {
+      return res.status(401).json({ message: "No Token, Authorization" });
+    }
+    const token = req.headers.authorization.split(" ")
+    const decode = jwt.verify(token[1], process.env.JWT_SECRET)
+    req.user = decode;
+
+    const user = await prisma.userGoogle.findFirst({
+      where: {
+        email: req.userGoogle.email
+      }
+    })
+    next();
+  }catch(err){
+    console.log(error);
+    res.status(401).json({ message: "Invalid token" });
+  }
+}
+
 const authenticateUser = async (req, res, next) => {
   try {
     const headerToken = req.headers.authorization;
@@ -84,4 +106,5 @@ module.exports = {
   adminCheck,
   storeCheck,
   authenticateToken,
+  authenticateGoogle,
 };

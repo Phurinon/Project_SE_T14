@@ -78,4 +78,21 @@ router.post("/changeRole", authenticateUser, adminCheck, async (req, res) => {
   }
 });
 
+router.delete('/remove/:userId', authenticateUser, adminCheck, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log("Deleting user:", userId);
+
+    await prisma.user.delete({
+      where: {
+        id: Number(userId)
+      }
+    });
+    res.json({ message: "User deleted successfully" });
+  }catch (err){
+    console.log("Can not delete user:", error);
+    res.status(500).json({ message: "Can not delete user" });
+  }
+})
+
 module.exports = router;

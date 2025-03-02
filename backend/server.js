@@ -5,6 +5,7 @@ const cors = require("cors");
 const passport = require("./config/passport");
 const session = require("express-session");
 
+
 const authRoutes = require("./routes/auth.js");
 const userRoutes = require("./routes/users.js");
 const shopRoutes = require("./routes/shop.js");
@@ -49,6 +50,7 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/safety-levels", safetyLevelRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/air", airRoutes);
+
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

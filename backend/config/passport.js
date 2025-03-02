@@ -8,32 +8,23 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/api/auth/google/callback", // URI ที่คุณกำหนดไว้ใน Google Console
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
-      try {
-        // ค้นหาผู้ใช้ในฐานข้อมูล
-        let user = await prisma.user.findFirst({
-          where: { email: profile.emails[0].value },
+      let user = await prisma.userGoogle.findUnique({
+        where: { googleId: profile.id },
+      });
+
+      if (!user) {
+        user = await prisma.userGoogle.create({
+          data: {
+            googleId: profile.id,
+            email: profile.emails[0].value,
+            name: profile.displayName,
+          },
         });
-
-        // ถ้าผู้ใช้ไม่มีในระบบ ให้สร้างใหม่
-        if (!user) {
-          const hashedPassword = await bcrypt.hash("default_password", 10); // สร้างค่าเริ่มต้น
-          user = await prisma.user.create({
-            data: {
-              name: profile.displayName,
-              email: profile.emails[0].value,
-              password: hashedPassword,
-            },
-          });
-        }
-
-        // ส่งข้อมูลผู้ใช้กลับไป
-        done(null, user);
-      } catch (error) {
-        done(error, null);
       }
+      return done(null, user);
     }
   )
 );

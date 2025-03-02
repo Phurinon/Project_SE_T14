@@ -38,12 +38,51 @@ router.get("/", async (req, res) => {
         },
       },
     });
+<<<<<<< Updated upstream
     res.json(shops);
+=======
+    const types = [...new Set(shops.map(shop => shop.type))];
+
+    res.json({
+      shops,
+      types
+    });
+>>>>>>> Stashed changes
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error fetching shops" });
   }
 });
+
+router.get("/listby", async (req, res) => {
+  try {
+    // code
+    const { sort, order, limit } = req.body
+    console.log(sort, order, limit)
+    const shops = await prisma.shop.findMany({
+      take: limit,
+      orderBy: { [sort]: order },
+      select: {
+        id: true,
+        name: true,
+        openTime: true,
+        closeTime: true,
+        address: true,
+        phone: true,
+        latitude: true,
+        longitude: true,
+        rating: true,
+        reviews: true,
+        images: true,
+      },
+      
+    })
+    res.send(shops)
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ message: "Server error" })
+  }
+})
 
 router.get("/my-shop", authenticateUser, async (req, res) => {
   try {
@@ -115,7 +154,12 @@ router.post("/", authenticateUser, async (req, res) => {
     } = req.body;
 
     if (!name || !address || !phone || !email) {
+<<<<<<< Updated upstream
       return res.status(400).json({ 
+=======
+      return res.status(400).json({
+        success: false,
+>>>>>>> Stashed changes
         message: "Missing required fields",
         required: "name, address, phone, email are required"
       });
@@ -172,16 +216,40 @@ router.post("/", authenticateUser, async (req, res) => {
   } catch (error) {
     console.error("Shop creation error:", error);
     if (error.code === 'P2002') {
+<<<<<<< Updated upstream
       return res.status(400).json({ 
+=======
+      return res.status(400).json({
+        success: false,
+>>>>>>> Stashed changes
         message: "A shop with this name already exists"
       });
     }
     if (error.code === 'P2003') {
       return res.status(400).json({
+<<<<<<< Updated upstream
         message: "Invalid user ID or reference constraint failed" 
       });
     }
     res.status(500).json({ 
+=======
+        success: false,
+        message: "Invalid user ID or reference constraint failed"
+      });
+    }
+
+    // Handle validation errors from Prisma
+    if (error.code === 'P2025') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid record operation"
+      });
+    }
+
+    // Generic error response
+    res.status(500).json({
+      success: false,
+>>>>>>> Stashed changes
       message: "Error creating shop",
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });

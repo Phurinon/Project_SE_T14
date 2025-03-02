@@ -1,6 +1,12 @@
+<<<<<<< Updated upstream
 import { useState } from "react";
 import { useNavigate,Link } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+=======
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Eye, EyeOff, Loader2, User, Mail, Lock, ArrowRight, ChevronsRight } from "lucide-react";
+>>>>>>> Stashed changes
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -209,6 +215,7 @@ export default function Register() {
               </div>
             )}
 
+<<<<<<< Updated upstream
             <div>
               <button
                 type="submit"
@@ -228,6 +235,40 @@ export default function Register() {
               </button>
             </div>
           </form>
+=======
+        {/* Divider */}
+        <div className="mt-6 relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-600"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-gray-800 text-gray-400">หรือเข้าสู่ระบบด้วย</span>
+          </div>
+        </div>
+
+        {/* Social login */}
+        <div className="mt-6">
+          <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+            <GoogleLogin
+              onSuccess={responseGoogle}
+              onError={() => toast.error("เข้าสู่ระบบด้วย Google ล้มเหลว")}
+              render={(renderProps) => (
+                <button
+                  onClick={renderProps.onClick}
+                  disabled={renderProps.disabled}
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-600 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                    alt="Google Logo"
+                    className="w-5 h-5"
+                  />
+                  <span>เข้าสู่ระบบด้วย Google</span>
+                </button>
+              )}
+            />
+          </GoogleOAuthProvider>
+>>>>>>> Stashed changes
         </div>
       </div>
     </div>
