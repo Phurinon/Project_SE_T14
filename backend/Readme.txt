@@ -22,13 +22,14 @@ REVOKE CONNECT ON DATABASE mydb FROM public;
 --อย่าลืมเปลี่ยน DATABASE_URL ใน .env ให้ตรงกัน--
 
 #step 4
-npx prisma migrate dev --name ชื่อ database
+npx prisma generate
+npx prisma migrate dev --name ข้อความ...
 
 
 
 
 // Doc ใช้ในการสร้างและอัพเดตฐานข้อมูล
-npx prisma migrate dev --name ชื่อ database
+npx prisma migrate dev --name
 
 // update Scheme
 npx prisma db push // no log
