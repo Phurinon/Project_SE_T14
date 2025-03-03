@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma.js");
 const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 const {
   authenticateUser,
@@ -10,6 +11,43 @@ const {
   storeCheck,
 } = require("../middleware/auth.js");
 const router = express.Router();
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        console.log(profile); // Log profile to check its structure
+
+        if (!profile || !profile.id) {
+          return done(new Error('Google profile ID is missing'), null);
+        }
+
+        let user = await prisma.userGoogle.findUnique({
+          where: { googleId: profile.id },
+        });
+
+        if (!user) {
+          user = await prisma.userGoogle.create({
+            data: {
+              googleId: profile.id,
+              email: profile.emails[0].value,
+              name: profile.displayName,
+            },
+          });
+        }
+        return done(null, user);
+      } catch (err) {
+        console.error(err);
+        return done(err, null);
+      }
+    }
+  )
+);
 
 // เริ่มกระบวนการ login ด้วย Google
 router.get(

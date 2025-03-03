@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight, ChevronsRight } from "lucide-react";
 import useDusthStore from "../../Global Store/DusthStore";
 import { toast } from "react-toastify";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,12 +12,26 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem("token", token);
+      alert("Login successful!");
+    }
+  }, [token]);
+
+  const googleLogin = () => {
+    window.location.href = "http://localhost:3000/api/auth/google";
+  };
+  
   // Google Login Handler
   const responseGoogle = (response) => {
     console.log(response);
@@ -172,7 +187,7 @@ export default function Login() {
 
         {/* Social login */}
         <div className="mt-6">
-          <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+          {/* <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
             <GoogleLogin
               onSuccess={responseGoogle}
               onError={() => toast.error("เข้าสู่ระบบด้วย Google ล้มเหลว")}
@@ -191,7 +206,19 @@ export default function Login() {
                 </button>
               )}
             />
-          </GoogleOAuthProvider>
+          </GoogleOAuthProvider> */}
+          <button 
+            onClick={googleLogin}
+            onSuccess={(responseGoogle)=>{
+              navigate("/user")
+            }}>
+          <img
+              src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+              alt="Google Logo"
+              className="w-5 h-5"
+              />
+              <span>เข้าสู่ระบบด้วย Google</span>
+          </button>
         </div>
       </div>
     </div>
