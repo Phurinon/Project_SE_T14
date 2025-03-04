@@ -23,6 +23,11 @@ router.get("/shop/:shopId", async (req, res) => {
             email: true,
           },
         },
+        likedBy: {
+          select: {
+            userId: true,
+          },
+        },
       },
     });
     res.json(reviews);
@@ -31,7 +36,6 @@ router.get("/shop/:shopId", async (req, res) => {
     res.status(500).json({ message: "Error fetching reviews" });
   }
 });
-
 // Create review
 router.post("/", authenticateUser, async (req, res) => {
   try {
@@ -179,16 +183,40 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
         },
       });
 
+      // Get the updated likes count
+      const likesCount = await prisma.reviewLike.count({
+        where: {
+          reviewId: reviewId,
+        },
+      });
+
+      // Update the review with correct likes count
       const review = await prisma.review.update({
         where: { id: reviewId },
         data: {
-          likes: {
-            decrement: 1,
+          likes: likesCount, // Set the exact count instead of incrementing/decrementing
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          likedBy: {
+            select: {
+              userId: true,
+            },
           },
         },
       });
 
-      return res.status(200).json({ message: "Unliked successfully", review });
+      return res.status(200).json({ 
+        message: "Unliked successfully", 
+        review,
+        userLiked: false 
+      });
     }
 
     // Like the review
@@ -199,17 +227,42 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
       },
     });
 
+    // Get the updated likes count
+    const likesCount = await prisma.reviewLike.count({
+      where: {
+        reviewId: reviewId,
+      },
+    });
+
+    // Update the review with correct likes count
     const review = await prisma.review.update({
       where: { id: reviewId },
       data: {
-        likes: {
-          increment: 1,
+        likes: likesCount, // Set the exact count instead of incrementing/decrementing
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        likedBy: {
+          select: {
+            userId: true,
+          },
         },
       },
     });
 
-    res.status(200).json({ message: "Liked successfully", review });
+    res.status(200).json({ 
+      message: "Liked successfully", 
+      review,
+      userLiked: true 
+    });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Error processing like/unlike" });
   }
 });

@@ -226,8 +226,8 @@ const ShopDetail = () => {
             const likedReviews = new Set(
               reviewsData
                 .filter(review => 
-                  Array.isArray(review.likes) && 
-                  review.likes.some(like => like.userId === userId)
+                  Array.isArray(review.likedBy) && 
+                  review.likedBy.some(like => like.userId === userId)
                 )
                 .map(review => review.id)
             );
@@ -341,7 +341,7 @@ const ShopDetail = () => {
       if (response && response.review) {
         setReviews(
           reviews.map((review) =>
-            review.id === reviewId ? { ...review, likes: response.review.likes } : review
+            review.id === reviewId ? response.review : review
           )
         );
       } else {
@@ -372,10 +372,10 @@ const ShopDetail = () => {
       // Toggle the like in userLikes Set
       setUserLikes((prev) => {
         const newLikes = new Set(prev);
-        if (newLikes.has(reviewId)) {
-          newLikes.delete(reviewId);
-        } else {
+        if (response.userLiked) {
           newLikes.add(reviewId);
+        } else {
+          newLikes.delete(reviewId);
         }
         return newLikes;
       });
@@ -691,7 +691,7 @@ const ShopDetail = () => {
                           ) : (
                             <Heart className="w-4 h-4" />
                           )}
-                          <span>{review.likes.length || 0}</span>
+                          <span>{typeof review.likes === 'number' ? review.likes : (review.likes?.length || 0)}</span>
                         </button>
 
                         <button

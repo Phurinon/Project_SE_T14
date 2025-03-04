@@ -47,7 +47,7 @@ export default function MainNav() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchValue.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchValue)}`);
+      // navigate(`/search?q=${encodeURIComponent(searchValue)}`);
       setSearchValue("");
       setShowResults(false);
     }
