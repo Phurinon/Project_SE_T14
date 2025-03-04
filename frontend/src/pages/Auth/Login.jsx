@@ -1,10 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight, ChevronsRight } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  Lock,
+  ArrowRight,
+  ChevronsRight,
+} from "lucide-react";
 import useDusthStore from "../../Global Store/DusthStore";
 import { toast } from "react-toastify";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
+// import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+// import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,7 +20,7 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
@@ -31,7 +39,7 @@ export default function Login() {
   const googleLogin = () => {
     window.location.href = "http://localhost:3000/api/auth/google";
   };
-  
+
   // Google Login Handler
   const responseGoogle = (response) => {
     console.log(response);
@@ -81,10 +89,15 @@ export default function Login() {
           <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg mb-6">
             <Lock className="h-8 w-8 text-white" />
           </div>
-          <h2 className="mt-2 text-3xl font-extrabold text-white">เข้าสู่ระบบ</h2>
+          <h2 className="mt-2 text-3xl font-extrabold text-white">
+            เข้าสู่ระบบ
+          </h2>
           <p className="mt-2 text-sm text-gray-400">
             ยังไม่มีบัญชี?{" "}
-            <Link to="/register" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200 inline-flex items-center">
+            <Link
+              to="/register"
+              className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200 inline-flex items-center"
+            >
               สมัครสมาชิกใหม่
               <ChevronsRight className="ml-1 h-4 w-4" />
             </Link>
@@ -96,7 +109,10 @@ export default function Login() {
           <div className="space-y-5">
             {/* Email field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300"
+              >
                 อีเมล
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -120,7 +136,10 @@ export default function Login() {
 
             {/* Password field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300"
+              >
                 รหัสผ่าน
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -181,7 +200,9 @@ export default function Login() {
             <div className="w-full border-t border-gray-600"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-800 text-gray-400">หรือเข้าสู่ระบบด้วย</span>
+            <span className="px-2 bg-gray-800 text-gray-400">
+              หรือเข้าสู่ระบบด้วย
+            </span>
           </div>
         </div>
 
@@ -207,17 +228,18 @@ export default function Login() {
               )}
             />
           </GoogleOAuthProvider> */}
-          <button 
+          <button
             onClick={googleLogin}
-            onSuccess={(responseGoogle)=>{
-              navigate("/user")
-            }}>
-          <img
+            onSuccess={(responseGoogle) => {
+              navigate("/user");
+            }}
+          >
+            <img
               src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
               alt="Google Logo"
               className="w-5 h-5"
-              />
-              <span>เข้าสู่ระบบด้วย Google</span>
+            />
+            <span>เข้าสู่ระบบด้วย Google</span>
           </button>
         </div>
       </div>

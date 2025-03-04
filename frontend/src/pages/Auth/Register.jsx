@@ -1,9 +1,18 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Loader2, User, Mail, Lock, ArrowRight, ChevronsRight } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  User,
+  Mail,
+  Lock,
+  ArrowRight,
+  ChevronsRight,
+} from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+// import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 
 export default function Register() {
   const [loading, setLoading] = useState(false);
@@ -119,10 +128,15 @@ export default function Register() {
           <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg mb-6">
             <User className="h-8 w-8 text-white" />
           </div>
-          <h2 className="mt-2 text-3xl font-extrabold text-white">สมัครสมาชิก</h2>
+          <h2 className="mt-2 text-3xl font-extrabold text-white">
+            สมัครสมาชิก
+          </h2>
           <p className="mt-2 text-sm text-gray-400">
             เป็นสมาชิกอยู่แล้ว?{" "}
-            <Link to="/login" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200 inline-flex items-center">
+            <Link
+              to="/login"
+              className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200 inline-flex items-center"
+            >
               เข้าสู่ระบบ
               <ChevronsRight className="ml-1 h-4 w-4" />
             </Link>
@@ -134,7 +148,10 @@ export default function Register() {
           <div className="space-y-5">
             {/* Name field */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-300"
+              >
                 ชื่อผู้ใช้
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -160,7 +177,10 @@ export default function Register() {
 
             {/* Email field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300"
+              >
                 อีเมล
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -186,7 +206,10 @@ export default function Register() {
 
             {/* Password field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300"
+              >
                 รหัสผ่าน
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -249,7 +272,9 @@ export default function Register() {
             <div className="w-full border-t border-gray-600"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-800 text-gray-400">หรือเข้าสู่ระบบด้วย</span>
+            <span className="px-2 bg-gray-800 text-gray-400">
+              หรือเข้าสู่ระบบด้วย
+            </span>
           </div>
         </div>
 
@@ -275,17 +300,18 @@ export default function Register() {
               )}
             />
           </GoogleOAuthProvider> */}
-          <button 
+          <button
             onClick={googleLogin}
-            onSuccess={(responseGoogle)=>{
-              navigate("/user")
-            }}>
-          <img
+            onSuccess={(responseGoogle) => {
+              navigate("/user");
+            }}
+          >
+            <img
               src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
               alt="Google Logo"
               className="w-5 h-5"
-              />
-              <span>เข้าสู่ระบบด้วย Google</span>
+            />
+            <span>เข้าสู่ระบบด้วย Google</span>
           </button>
         </div>
       </div>

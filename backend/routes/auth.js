@@ -24,7 +24,7 @@ passport.use(
         console.log(profile); // Log profile to check its structure
 
         if (!profile || !profile.id) {
-          return done(new Error('Google profile ID is missing'), null);
+          return done(new Error("Google profile ID is missing"), null);
         }
 
         let user = await prisma.userGoogle.findUnique({
