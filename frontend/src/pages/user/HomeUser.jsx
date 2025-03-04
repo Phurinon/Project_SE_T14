@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   Bookmark,
   Map as MapIcon,
+  FilterIcon,
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -37,21 +38,23 @@ const MapUpdater = ({ center }) => {
   return null;
 };
 
-// Component สำหรับแสดงตัวอธิบายระดับคุณภาพอากาศ (Legend)
-const SafetyLevelLegend = ({ safetyLevels }) => {
+// Component สำหรับแสดงตัวอธิบายระดับคุณภาพอากาศ (Legend) และใช้เป็นตัวกรอง
+const SafetyLevelLegend = ({ safetyLevels, activeSafetyFilter, setActiveSafetyFilter }) => {
   // ตรวจสอบว่ามี safetyLevels หรือไม่
   if (!safetyLevels || safetyLevels.length === 0) return null;
 
   return (
     <div className="absolute bottom-4 right-4 z-[999] bg-gray-900/80 backdrop-blur-md rounded-lg shadow-xl border border-gray-700 overflow-hidden">
-      <div className="text-white text-sm font-medium p-3 bg-gray-800/60 border-b border-gray-700">
-        ระดับคุณภาพอากาศ (PM2.5)
+      <div className="text-white text-sm font-medium p-3 bg-gray-800/60 border-b border-gray-700 flex justify-between items-center">
+        <span>ระดับคุณภาพอากาศ (PM2.5)</span>
       </div>
       <div className="p-2">
         {safetyLevels.map((level) => (
           <div 
             key={level.id} 
-            className="flex items-center gap-3 p-2 mb-1 rounded-md hover:bg-gray-800/60 transition-colors"
+            onClick={() => setActiveSafetyFilter(level.id === activeSafetyFilter ? null : level.id)}
+            className={`flex items-center gap-3 p-2 mb-1 rounded-md hover:bg-gray-800/60 transition-colors cursor-pointer
+                      ${activeSafetyFilter === level.id ? 'bg-gray-800 ring-1 ring-gray-600' : ''}`}
           >
             <div 
               className="w-5 h-5 rounded-full flex-shrink-0" 
@@ -61,7 +64,9 @@ const SafetyLevelLegend = ({ safetyLevels }) => {
                 border: "2px solid rgba(255, 255, 255, 0.3)"
               }}
             ></div>
-            <span className="text-sm text-gray-200">{level.label}</span>
+            <span className={`text-sm ${activeSafetyFilter === level.id ? 'text-white font-medium' : 'text-gray-200'}`}>
+              {level.label}
+            </span>
           </div>
         ))}
       </div>
@@ -114,20 +119,28 @@ const getPM25Level = (value, safetyLevels) => {
   return level ? level.label : sortedLevels[sortedLevels.length - 1].label;
 };
 
-const createMarkerIcon = (color, value, size = 40) => {
+const getLevelIdForValue = (value, levels) => {
+  if (!levels || levels.length === 0) return null;
+  const level = levels.find(level => 
+    value >= (level.minValue || 0) && value <= (level.maxValue || Number.MAX_SAFE_INTEGER)
+  );
+  return level ? level.id : null;
+};
+
+const createMarkerIcon = (color, value, size = 40, isFiltered = false) => {
   return L.divIcon({
     className: "custom-marker",
     html: `
       <div class="relative">
-        <div class="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-110">
+        <div class="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-110 ${isFiltered ? 'animate-pulse scale-110' : ''}">
           <div class="flex items-center justify-center" 
                style="
                  width: ${size}px; 
                  height: ${size}px; 
                  border-radius: 50%; 
                  background-color: ${color}; 
-                 box-shadow: 0 0 15px ${color}; 
-                 border: 3px solid rgba(200, 200, 200, 0.5); 
+                 box-shadow: 0 0 ${isFiltered ? '20px' : '15px'} ${color}; 
+                 border: ${isFiltered ? '4px' : '3px'} solid rgba(${isFiltered ? '255, 255, 255' : '200, 200, 200'}, ${isFiltered ? '0.8' : '0.5'}); 
                  color: white; 
                  font-size: 0.875rem; 
                  font-weight: bold;
@@ -148,8 +161,10 @@ const ShopPopup = ({ shop, safetyLevels }) => {
   const [bookmarkCategory, setBookmarkCategory] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showEditDropdown, setShowEditDropdown] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const dropdownRef = useRef(null);
+  const editDropdownRef = useRef(null);
 
   useEffect(() => {
     const checkBookmark = async () => {
@@ -169,6 +184,9 @@ const ShopPopup = ({ shop, safetyLevels }) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
+      if (editDropdownRef.current && !editDropdownRef.current.contains(event.target)) {
+        setShowEditDropdown(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -185,10 +203,21 @@ const ShopPopup = ({ shop, safetyLevels }) => {
     setIsLoading(true);
     try {
       if (isBookmarked) {
-        await removeBookmark(shop.id);
-        setIsBookmarked(false);
-        setBookmarkCategory(null);
+        // If editing the bookmark category
+        if (category !== null) {
+          // Remove the existing bookmark first
+          await removeBookmark(shop.id);
+          // Then create a new bookmark with the new category
+          await createBookmark(shop.id, category);
+          setBookmarkCategory(category);
+        } else {
+          // If category is null, it means we're removing the bookmark
+          await removeBookmark(shop.id);
+          setIsBookmarked(false);
+          setBookmarkCategory(null);
+        }
       } else {
+        // Creating a new bookmark
         await createBookmark(shop.id, category);
         setIsBookmarked(true);
         setBookmarkCategory(category);
@@ -198,6 +227,7 @@ const ShopPopup = ({ shop, safetyLevels }) => {
     } finally {
       setIsLoading(false);
       setShowDropdown(false);
+      setShowEditDropdown(false);
     }
   };
 
@@ -211,6 +241,11 @@ const ShopPopup = ({ shop, safetyLevels }) => {
   const getCategoryLabel = () => {
     const category = bookmarkCategories.find((c) => c.id === bookmarkCategory);
     return category ? category.label : "";
+  };
+
+  const getCategoryColor = () => {
+    const category = bookmarkCategories.find((c) => c.id === bookmarkCategory);
+    return category ? category.color : "text-gray-200";
   };
 
   const pm25Color = getPM25Color(shop.pm25, safetyLevels);
@@ -232,6 +267,16 @@ const ShopPopup = ({ shop, safetyLevels }) => {
   };
 
   const hasImages = shop.images && shop.images.length > 0;
+
+  const handleBookmarkClick = () => {
+    if (isBookmarked) {
+      // Show edit dropdown when already bookmarked
+      setShowEditDropdown(!showEditDropdown);
+    } else {
+      // Show create dropdown when not bookmarked
+      setShowDropdown(!showDropdown);
+    }
+  };
 
   return (
     <div className="p-3 bg-gray-900 text-gray-100 rounded-lg shadow-lg border border-gray-700 min-w-64 w-80">
@@ -334,11 +379,7 @@ const ShopPopup = ({ shop, safetyLevels }) => {
           </button>
           <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() =>
-                isBookmarked
-                  ? handleBookmark(null)
-                  : setShowDropdown(!showDropdown)
-              }
+              onClick={handleBookmarkClick}
               disabled={isLoading}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors shadow-lg ${
                 isBookmarked
@@ -347,11 +388,14 @@ const ShopPopup = ({ shop, safetyLevels }) => {
               }`}
             >
               <Bookmark
-                className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""}`}
+                className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""} ${isBookmarked ? getCategoryColor() : ""}`}
               />
-              <span className="text-nowrap">{isBookmarked ? getCategoryLabel() : "บันทึก"}</span>
+              <span className={`text-nowrap ${isBookmarked ? getCategoryColor() : ""}`}>
+                {isBookmarked ? getCategoryLabel() : "บันทึก"}
+              </span>
             </button>
 
+            {/* Dropdown for creating new bookmark */}
             {showDropdown && !isBookmarked && (
               <div className="absolute right-0 mt-1 py-1 w-40 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50">
                 {bookmarkCategories.map((category) => (
@@ -363,6 +407,37 @@ const ShopPopup = ({ shop, safetyLevels }) => {
                     {category.label}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Dropdown for editing existing bookmark */}
+            {showEditDropdown && isBookmarked && (
+              <div className="absolute right-0 mt-1 py-1 w-40 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50" ref={editDropdownRef}>
+                <div className="px-3 py-1 font-medium text-sm border-b border-gray-700 text-gray-400">
+                  เปลี่ยนหมวดหมู่
+                </div>
+                {bookmarkCategories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleBookmark(category.id)}
+                    className={`w-full px-4 py-2 text-left hover:bg-gray-700 ${category.color} ${
+                      category.id === bookmarkCategory ? 'bg-gray-700' : ''
+                    }`}
+                  >
+                    {category.label}
+                    {category.id === bookmarkCategory && (
+                      <span className="ml-2">✓</span>
+                    )}
+                  </button>
+                ))}
+                <div className="border-t border-gray-700 mt-1">
+                  <button
+                    onClick={() => handleBookmark(null)}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-700 text-red-400"
+                  >
+                    ลบออกจากบุ๊คมาร์ค
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -387,6 +462,7 @@ export default function HomeUser() {
   ]);
   const [selectedShop, setSelectedShop] = useState(null);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [activeSafetyFilter, setActiveSafetyFilter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [safetyLevels, setSafetyLevels] = useState([]);
@@ -436,8 +512,23 @@ export default function HomeUser() {
   useEffect(() => {
     const fetchSafetyLevels = async () => {
       try {
-        const levels = await getAllSafetyLevels();
-        setSafetyLevels(levels);
+        let levels = await getAllSafetyLevels();
+        
+        // เรียงลำดับตามค่าน้อยไปมาก (บนสมมติฐานว่าแต่ละ level มี maxValue อยู่แล้ว)
+        levels = levels.sort((a, b) => a.maxValue - b.maxValue);
+        
+        // กำหนดค่า minValue สำหรับแต่ละระดับ
+        const updatedLevels = levels.map((level, index) => {
+          if (index === 0) {
+            // ระดับแรก (ค่าต่ำสุด) ไม่มี minValue หรือกำหนดเป็น 0
+            return { ...level, minValue: 0 };
+          } else {
+            // ระดับอื่นๆ ใช้ค่า maxValue ของระดับก่อนหน้า + 0.1 เป็น minValue
+            return { ...level, minValue: levels[index - 1].maxValue + 0.1 };
+          }
+        });
+        
+        setSafetyLevels(updatedLevels);
       } catch (error) {
         console.error("Error fetching safety levels:", error);
       }
@@ -508,6 +599,37 @@ export default function HomeUser() {
     }
   }, [currentLocation]);
 
+  // ฟังก์ชั่นสำหรับตรวจสอบว่า shop เข้าเงื่อนไขของ safety level หรือไม่
+  const meetsAirQualityCriteria = (shop) => {
+    if (!activeSafetyFilter) return true;
+    
+    const selectedLevel = safetyLevels.find(level => level.id === activeSafetyFilter);
+    if (!selectedLevel) return true;
+    
+    // ตรวจสอบว่าค่า PM2.5 ของร้านนี้อยู่ในช่วงของเกณฑ์คุณภาพอากาศที่เลือกหรือไม่
+    if (selectedLevel.minValue !== undefined && selectedLevel.maxValue !== undefined) {
+      return shop.pm25 >= selectedLevel.minValue && shop.pm25 <= selectedLevel.maxValue;
+    }
+    
+    // กรณีที่มีแค่ maxValue (สำหรับระดับแรก)
+    if (selectedLevel.maxValue !== undefined && selectedLevel.minValue === undefined) {
+      return shop.pm25 <= selectedLevel.maxValue;
+    }
+    
+    // กรณีที่มีแค่ minValue (สำหรับระดับสุดท้าย)
+    if (selectedLevel.minValue !== undefined && selectedLevel.maxValue === undefined) {
+      return shop.pm25 >= selectedLevel.minValue;
+    }
+    
+    return true;
+  };
+
+  // ปรับปรุงฟังก์ชั่นกรองร้านค้าให้ใช้ทั้งประเภทร้านและเกณฑ์คุณภาพอากาศ
+  const filteredShops = shops.filter(shop => 
+    (activeFilter === "all" || shop.type === activeFilter) && 
+    meetsAirQualityCriteria(shop)
+  );
+
   if (loading) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-gray-100">
@@ -537,10 +659,6 @@ export default function HomeUser() {
     );
   }
 
-  const filteredShops = shops.filter((shop) =>
-    activeFilter === "all" ? true : shop.type === activeFilter
-  );
-
   const currentLocationIcon = L.divIcon({
     className: "current-location-marker",
     html: `
@@ -560,7 +678,11 @@ export default function HomeUser() {
 
   return (
     <div className="relative w-full h-full bg-gray-900">
-      <SafetyLevelLegend safetyLevels={safetyLevels} />
+      <SafetyLevelLegend 
+        safetyLevels={safetyLevels} 
+        activeSafetyFilter={activeSafetyFilter} 
+        setActiveSafetyFilter={setActiveSafetyFilter} 
+      />
 
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[999] p-2 bg-gray-900/40 backdrop-blur-md rounded-full">
         <div className="flex gap-2 overflow-x-auto px-1 py-1 scrollbar-hide">
@@ -597,23 +719,30 @@ export default function HomeUser() {
         </Marker>
 
         {/* Shop markers */}
-        {filteredShops.map((shop) => (
-          <Marker
-            key={shop.id}
-            position={[shop.latitude, shop.longitude]}
-            icon={createMarkerIcon(
-              getPM25Color(shop.pm25, safetyLevels),
-              shop.pm25
-            )}
-            eventHandlers={{
-              click: () => setSelectedShop(shop),
-            }}
-          >
-            <Popup className="dark-popup" minWidth={300}>
-              <ShopPopup shop={shop} safetyLevels={safetyLevels} />
-            </Popup>
-          </Marker>
-        ))}
+        {filteredShops.map((shop) => {
+          const levelId = getLevelIdForValue(shop.pm25, safetyLevels);
+          const isHighlighted = activeSafetyFilter === levelId;
+          
+          return (
+            <Marker
+              key={shop.id}
+              position={[shop.latitude, shop.longitude]}
+              icon={createMarkerIcon(
+                getPM25Color(shop.pm25, safetyLevels),
+                shop.pm25,
+                isHighlighted ? 50 : 40,
+                isHighlighted
+              )}
+              eventHandlers={{
+                click: () => setSelectedShop(shop),
+              }}
+            >
+              <Popup className="dark-popup" minWidth={300}>
+                <ShopPopup shop={shop} safetyLevels={safetyLevels} />
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
 
       {/* Custom CSS for dark mode popups and animations */}

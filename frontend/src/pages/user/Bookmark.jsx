@@ -10,12 +10,13 @@ const Bookmark = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // แก้ไข ID ของ filters ให้ตรงกับค่าที่บันทึกในระบบ
   const filters = [
-    { id: 'ทั้งหมด', label: 'ทั้งหมด', icon: <BookmarkIcon className="w-4 h-4" /> },
-    { id: 'รายการโปรด', label: 'รายการโปรด', icon: <Heart className="w-4 h-4" /> },
-    { id: 'อยากไป', label: 'อยากไป', icon: <MapPin className="w-4 h-4" /> },
-    { id: 'เคยไปมาแล้ว', label: 'เคยไปมาแล้ว', icon: <CheckCircle className="w-4 h-4" /> },
-    { id: 'อยากแชร์', label: 'อยากแชร์', icon: <Share2 className="w-4 h-4" /> }
+    { id: 'all', label: 'ทั้งหมด', icon: <BookmarkIcon className="w-4 h-4" /> },
+    { id: 'favorite', label: 'รายการโปรด', icon: <Heart className="w-4 h-4" /> },
+    { id: 'wantToGo', label: 'อยากไป', icon: <MapPin className="w-4 h-4" /> },
+    { id: 'visited', label: 'เคยไปมาแล้ว', icon: <CheckCircle className="w-4 h-4" /> },
+    { id: 'share', label: 'อยากแชร์', icon: <Share2 className="w-4 h-4" /> }
   ];
 
   useEffect(() => {
@@ -53,6 +54,18 @@ const Bookmark = () => {
 
   const handleViewDetails = (shopId) => {
     window.open(`/user/shop/${shopId}`, "_blank");
+  };
+
+  // ฟังก์ชันใหม่เพื่อแปลงรหัสหมวดหมู่เป็นชื่อ
+  const getCategoryLabel = (categoryId) => {
+    const category = filters.find(f => f.id === categoryId);
+    return category ? category.label : 'ไม่ระบุหมวดหมู่';
+  };
+
+  // ฟังก์ชันใหม่เพื่อดึง icon ของหมวดหมู่
+  const getCategoryIcon = (categoryId) => {
+    const category = filters.find(f => f.id === categoryId);
+    return category ? category.icon : <BookmarkIcon className="w-4 h-4" />;
   };
 
   if (error) {
@@ -136,8 +149,8 @@ const Bookmark = () => {
                       </div>
                       <div className="absolute bottom-3 left-3">
                         <span className="inline-flex items-center gap-1 text-sm px-3 py-1 bg-white/90 text-[#212329] rounded-full shadow-md">
-                          {filters.find(f => f.id === bookmark.category)?.icon}
-                          {filters.find(f => f.id === bookmark.category)?.label || 'ไม่ระบุหมวดหมู่'}
+                          {getCategoryIcon(bookmark.category)}
+                          {getCategoryLabel(bookmark.category)}
                         </span>
                       </div>
                     </div>
