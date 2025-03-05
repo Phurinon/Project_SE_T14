@@ -64,8 +64,30 @@ export default function Login() {
       roleRedirect(role);
       toast.success("เข้าสู่ระบบสำเร็จ");
     } catch (err) {
-      const errorMessage = err.response?.data?.message;
-      toast.error(errorMessage);
+      const errorMessage = err.response?.data?.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ";
+      if (
+        errorMessage.toLowerCase().includes("password") ||
+        errorMessage.toLowerCase().includes("incorrect") ||
+        errorMessage.toLowerCase().includes("invalid")
+      ) {
+        toast.error("อีเมลหรือรหัสผ่านไม่ถูกต้อง", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } else {
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
     } finally {
       setLoading(false);
     }
