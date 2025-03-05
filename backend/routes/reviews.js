@@ -72,6 +72,8 @@ router.post("/", authenticateUser, async (req, res) => {
         comment,
         shopId: parseInt(shopId),
         userId: req.user.id,
+        status: "pending", // เพิ่มบรรทัดนี้
+        reported: false    // เพิ่มบรรทัดนี้
       },
     });
 
@@ -413,9 +415,8 @@ router.get("/reported", authenticateUser, adminCheck, async (req, res) => {
     const reviews = await prisma.review.findMany({
       where: {
         OR: [
-          { status: "pending" },
           { reported: true },
-          { ReviewReport: { some: {} } }  // มี report อย่างน้อย 1 report
+          { ReviewReport: { some: {} } }
         ]
       },
       include: {

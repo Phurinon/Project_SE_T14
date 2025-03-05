@@ -195,8 +195,27 @@ const ShopPopup = ({ shop, safetyLevels }) => {
 
   const isOpen = () => {
     const now = new Date();
-    const currentTime = now.getHours() + ":" + now.getMinutes();
-    return currentTime >= shop.openTime && currentTime <= shop.closeTime;
+    const currentHours = now.getHours();
+    const currentMinutes = now.getMinutes();
+    
+    const [openHours, openMinutes] = shop.openTime.split(':').map(Number);
+    const [closeHours, closeMinutes] = shop.closeTime.split(':').map(Number);
+    
+    // กรณีร้านเปิดข้ามคืน (เช่น 17:00 - 00:00)
+    if (closeHours < openHours) {
+      // เช็คว่าอยู่ในช่วงเวลาหลังเวลาเปิดหรือก่อนเวลาปิด
+      return (currentHours > openHours) || 
+             (currentHours === openHours && currentMinutes >= openMinutes) || 
+             (currentHours < closeHours) || 
+             (currentHours === closeHours && currentMinutes <= closeMinutes);
+    }
+    
+    // กรณีปกติ
+    const currentTime = currentHours * 60 + currentMinutes;
+    const openTime = openHours * 60 + openMinutes;
+    const closeTime = closeHours * 60 + closeMinutes;
+    
+    return currentTime >= openTime && currentTime <= closeTime;
   };
 
   const handleBookmark = async (category) => {
