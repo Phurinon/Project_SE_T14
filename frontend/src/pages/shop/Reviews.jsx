@@ -145,30 +145,41 @@ const Reviews = () => {
       try {
         setLoading(true);
         const shop = await getMyShop(token);
+        console.log("Shop ID:", shop.id);
+  
         const shopReviews = await getShopReviews(shop.id);
-
+        console.log("Raw Reviews:", shopReviews);
+  
         const approvedReviews = shopReviews.filter(
           (review) =>
-            review.status === "approved" || review.status === "pending"
+            review.status === "approved" ||
+            review.status === "pending" ||
+            !review.status // รวมกรณี status เป็น null หรือ undefined
         );
+        console.log("Filtered Reviews:", approvedReviews);
+  
         setReviews(approvedReviews);
-
+  
         const averageRating =
           approvedReviews.length > 0
             ? approvedReviews.reduce((sum, review) => sum + review.rating, 0) /
               approvedReviews.length
             : 0;
         setAverageRating(averageRating);
-
+  
         setIsShopOwner(true);
       } catch (error) {
         console.error("Error fetching reviews:", error);
-        toast.error("เกิดข้อผิดพลาด: ไม่สามารถโหลดรีวิวได้");
+        toast.error(
+          `เกิดข้อผิดพลาด: ${
+            error.response?.data?.message || "ไม่สามารถโหลดรีวิวได้"
+          }`
+        );
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchShopAndReviews();
   }, [token]);
 

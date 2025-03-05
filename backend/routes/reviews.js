@@ -14,6 +14,10 @@ router.get("/shop/:shopId", async (req, res) => {
     const reviews = await prisma.review.findMany({
       where: {
         shopId: parseInt(req.params.shopId),
+        OR: [
+          { status: "approved" },
+          { status: "pending" },
+        ],
       },
       include: {
         user: {

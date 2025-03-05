@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
-import {
-  Trash2,
-  CheckCircle,
-  MessageSquare,
-  AlertCircle,
+import { 
+  Trash2, 
+  CheckCircle, 
+  MessageSquare, 
+  AlertCircle, 
   XCircle,
   Info,
   ShieldAlert,
-  Users,
+  Users 
 } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  getReportedReviews,
-  moderateReview,
-  getReviewReports,
+import { 
+  getReportedReviews, 
+  moderateReview, 
+  getReviewReports 
 } from "../../api/reviews";
 import useDusthStore from "../../Global Store/DusthStore";
 
@@ -31,9 +31,7 @@ export default function Content() {
       setLoading(true);
       const reportedContent = await getReportedReviews(token);
 
-      const formattedContent = reportedContent
-      .filter(review => review.status !== "rejected" && review.reportCount > 0) // กรองรีวิวที่การรายงานไม่ถูกปฏิเสธ
-      .map((review) => ({
+      const formattedContent = reportedContent.map((review) => ({
         id: review.id,
         type: "review",
         user: review.user?.name || "ผู้ใช้ไม่ทราบชื่อ",
@@ -45,8 +43,8 @@ export default function Content() {
         status: review.status || "รอดำเนินการ",
       }));
 
-      const sortedContent = formattedContent.sort(
-        (a, b) => (b.reportCount || 0) - (a.reportCount || 0)
+      const sortedContent = formattedContent.sort((a, b) => 
+        (b.reportCount || 0) - (a.reportCount || 0)
       );
 
       setContent(sortedContent);
@@ -93,19 +91,20 @@ export default function Content() {
           icon: <CheckCircle className="text-green-500" />,
         });
       } else {
-        setContent(prevContent => prevContent.filter(item => item.id !== id)); // ลบออกจาก UI
-        toast.success("ปฏิเสธการรายงานสำเร็จ", { // เปลี่ยนข้อความให้ชัดเจน
-          icon: <CheckCircle className="text-green-500" />, // เปลี่ยนไอคอนให้เหมาะสม
+        await fetchReportedContent();
+        toast.error("ปฏิเสธรีวิว", {
+          icon: <XCircle className="text-red-500" />,
         });
-        await fetchReportedContent(); // อัปเดตข้อมูลจาก backend
       }
     } catch (error) {
       console.error("Moderation failed", error);
+  
       const errorMessage =
         error.response?.data?.message ||
         error.response?.data?.errorDetails ||
         error.message ||
-        "ไม่สามารถดำเนินการได้";
+        "ไม่สามารถดำเนินการกับรีวิวได้";
+  
       toast.error(errorMessage, {
         icon: <ShieldAlert className="text-red-500" />,
         position: "top-right",
@@ -124,27 +123,25 @@ export default function Content() {
     setReports([]);
   };
 
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin">
-          <Info className="w-12 h-12 text-blue-500" />
-        </div>
+  if (loading) return (
+    <div className="flex justify-center items-center h-screen">
+      <div className="animate-spin">
+        <Info className="w-12 h-12 text-blue-500" />
       </div>
-    );
+    </div>
+  );
 
-  if (error)
-    return (
-      <div className="flex justify-center items-center h-screen text-red-500">
-        <ShieldAlert className="w-12 h-12 mr-4" />
-        <p className="text-xl">เกิดข้อผิดพลาด: {error}</p>
-      </div>
-    );
+  if (error) return (
+    <div className="flex justify-center items-center h-screen text-red-500">
+      <ShieldAlert className="w-12 h-12 mr-4" />
+      <p className="text-xl">เกิดข้อผิดพลาด: {error}</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
       <ToastContainer />
-
+      
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold text-gray-800 flex items-center">
           <ShieldAlert className="w-8 h-8 mr-3 text-red-500" />
@@ -159,7 +156,7 @@ export default function Content() {
             เนื้อหาที่ถูกรายงาน
           </h3>
         </div>
-
+        
         <div className="p-4 space-y-4">
           {content.length === 0 ? (
             <div className="text-center py-10 text-gray-500 flex flex-col items-center">
@@ -168,16 +165,14 @@ export default function Content() {
             </div>
           ) : (
             content.map((item) => (
-              <div
-                key={item.id}
+              <div 
+                key={item.id} 
                 className="bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow p-4"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <MessageSquare className="w-5 h-5 text-gray-500" />
-                    <span className="font-medium text-gray-800">
-                      {item.user}
-                    </span>
+                    <span className="font-medium text-gray-800">{item.user}</span>
                     <span className="text-sm text-gray-500">{item.shop}</span>
                     <span className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full flex items-center">
                       <AlertCircle className="w-3 h-3 mr-1" />
@@ -185,23 +180,19 @@ export default function Content() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button
+                    <button 
                       onClick={() => openReportDetails(item)}
                       className="text-blue-500 hover:text-blue-700 flex items-center gap-1 text-sm"
                     >
                       <Info className="w-4 h-4" />
                       ดูรายละเอียดการรายงาน
                     </button>
-                    <span className="text-xs text-gray-500">
-                      {item.reported}
-                    </span>
+                    <span className="text-xs text-gray-500">{item.reported}</span>
                   </div>
                 </div>
-
-                <p className="mb-4 text-gray-700 line-clamp-2">
-                  {item.content}
-                </p>
-
+                
+                <p className="mb-4 text-gray-700 line-clamp-2">{item.content}</p>
+                
                 <div className="flex gap-3">
                   <button
                     className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
@@ -215,7 +206,7 @@ export default function Content() {
                     onClick={() => handleModeration(item.id, "reject")}
                   >
                     <Trash2 className="w-5 h-5" />
-                    ปฏิเสธการรายงาน
+                    ลบ
                   </button>
                 </div>
               </div>
@@ -233,7 +224,7 @@ export default function Content() {
                 <ShieldAlert className="w-6 h-6 mr-2 text-red-500" />
                 รายละเอียดการรายงาน
               </h3>
-              <button
+              <button 
                 onClick={closeReportDetails}
                 className="text-gray-500 hover:text-gray-700 bg-gray-200 rounded-full p-2"
               >
@@ -267,8 +258,8 @@ export default function Content() {
                   </div>
                 ) : (
                   reports.map((report) => (
-                    <div
-                      key={report.id}
+                    <div 
+                      key={report.id} 
                       className="bg-gray-50 rounded-lg p-4 mb-3 border"
                     >
                       <div className="flex justify-between items-start">
@@ -277,9 +268,7 @@ export default function Content() {
                             <Users className="w-4 h-4 mr-2 text-gray-500" />
                             {report.userName}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            {report.userEmail}
-                          </p>
+                          <p className="text-sm text-gray-500">{report.userEmail}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-red-600 flex items-center justify-end">
