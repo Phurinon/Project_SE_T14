@@ -557,7 +557,7 @@ export default function HomeUser() {
 
   useEffect(() => {
     if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
+      const watchId = navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           setCurrentLocation({ lat: latitude, lng: longitude });
@@ -568,8 +568,14 @@ export default function HomeUser() {
           setError("ไม่สามารถระบุตำแหน่งของคุณได้");
           setLoading(false);
         },
-        { enableHighAccuracy: true }
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000,
+        }
       );
+
+      return () => navigator.geolocation.clearWatch(watchId);
     } else {
       setError("เบราว์เซอร์ของคุณไม่รองรับการระบุตำแหน่ง");
       setLoading(false);
@@ -681,9 +687,9 @@ export default function HomeUser() {
   const currentLocationIcon = L.divIcon({
     className: "current-location-marker",
     html: `
-      <div class="relative">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-blue-500 rounded-full border-2 border-white shadow-xl animate-pulse"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-blue-500/30 rounded-full animate-ping"></div>
+      <div class="w-12 h-12 flex items-center justify-center">
+        <div class="w-6 h-6 bg-blue-500 rounded-full border-2 border-white shadow-xl animate-pulse"></div>
+        <div class="absolute w-12 h-12 bg-blue-500/30 rounded-full animate-ping"></div>
       </div>
     `,
     iconSize: [48, 48],
