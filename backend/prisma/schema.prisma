@@ -19,6 +19,20 @@ model Bookmark {
   @@unique([userId, shopId]) // Ensures one user can only bookmark a shop once
 }
 
+model ReviewReport {
+  id        Int      @id @default(autoincrement())
+  reviewId  Int
+  userId    Int
+  reason    String
+  status    String   @default("pending") // pending, reviewed, dismissed
+  createdAt DateTime @default(now())
+  
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, reviewId]) // ป้องกันไม่ให้ user report review เดิมซ้ำ
+}
+
 model ReviewLike {
   id        Int      @id @default(autoincrement())
   userId    Int
@@ -43,6 +57,7 @@ model User {
   comments  Comment[] // User can have comments
   likedReviews ReviewLike[]
   bookmarks Bookmark[]
+  reviewReports ReviewReport[]
 }
 
 model UserGoogle {
@@ -92,7 +107,8 @@ model Review {
   createdAt DateTime     @default(now())
   user      User         @relation(fields: [userId], references: [id])
   shop      Shop         @relation(fields: [shopId], references: [id])
-  likedBy   ReviewLike[] // Add this relation
+  ReviewLike    ReviewLike[]
+  ReviewReport  ReviewReport[]
 
   @@unique([userId, shopId]) // Ensures one review per user per shop
 }

@@ -28,6 +28,7 @@ import {
   likeReview,
   calculateAverageRating,
   checkUserShopReview,
+  checkUserReviewReport,
 } from "../../api/reviews";
 import useDusthStore from "../../Global Store/DusthStore";
 
@@ -329,11 +330,17 @@ const ShopDetail = () => {
       return;
     }
     try {
+
+      const hasReported = await checkUserReviewReport(userToken, reviewId);
+      if (hasReported) {
+        toast.error("คุณได้รายงาน review นี้ไปแล้ว");
+        return;
+      }
       await reportReview(userToken, reviewId, reason);
       toast.success("รายงานสำเร็จ");
       setSelectedReviewToReport(null);
     } catch (err) {
-      toast.error(`เกิดข้อผิดพลาด: ${err.message}`);
+      toast.error(`${err.message}`);
     }
   };
 

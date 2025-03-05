@@ -23,9 +23,14 @@ router.get("/shop/:shopId", async (req, res) => {
             email: true,
           },
         },
-        likedBy: {
+        ReviewLike: {
           select: {
             userId: true,
+          },
+        },
+        shop: {
+          select: {
+            name: true,
           },
         },
       },
@@ -36,6 +41,7 @@ router.get("/shop/:shopId", async (req, res) => {
     res.status(500).json({ message: "Error fetching reviews" });
   }
 });
+
 // Create review
 router.post("/", authenticateUser, async (req, res) => {
   try {
@@ -50,7 +56,9 @@ router.post("/", authenticateUser, async (req, res) => {
     });
 
     if (existingReview) {
-      return res.status(400).json({ message: "You have already reviewed this shop" });
+      return res
+        .status(400)
+        .json({ message: "You have already reviewed this shop" });
     }
 
     const review = await prisma.review.create({
@@ -78,8 +86,8 @@ router.post("/", authenticateUser, async (req, res) => {
 
     res.status(201).json(review);
   } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: "Error creating review" });
+    console.log(error);
+    res.status(500).json({ message: "Error creating review" });
   }
 });
 
@@ -146,7 +154,8 @@ router.post("/:id/reply", authenticateUser, async (req, res) => {
     const updatedReview = await prisma.review.update({
       where: { id: parseInt(req.params.id) },
       data: { reply },
-      include: {  // เพิ่ม include
+      include: {
+        // เพิ่ม include
         user: {
           select: {
             name: true,
@@ -194,7 +203,7 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
       const review = await prisma.review.update({
         where: { id: reviewId },
         data: {
-          likes: likesCount, // Set the exact count instead of incrementing/decrementing
+          likes: likesCount,
         },
         include: {
           user: {
@@ -204,7 +213,7 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
               email: true,
             },
           },
-          likedBy: {
+          ReviewLike: {  // Changed from likedBy to ReviewLike
             select: {
               userId: true,
             },
@@ -212,10 +221,10 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
         },
       });
 
-      return res.status(200).json({ 
-        message: "Unliked successfully", 
+      return res.status(200).json({
+        message: "Unliked successfully",
         review,
-        userLiked: false 
+        userLiked: false,
       });
     }
 
@@ -238,7 +247,7 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
     const review = await prisma.review.update({
       where: { id: reviewId },
       data: {
-        likes: likesCount, // Set the exact count instead of incrementing/decrementing
+        likes: likesCount,
       },
       include: {
         user: {
@@ -248,7 +257,7 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
             email: true,
           },
         },
-        likedBy: {
+        ReviewLike: {  // Changed from likedBy to ReviewLike
           select: {
             userId: true,
           },
@@ -256,40 +265,142 @@ router.post("/like/:id", authenticateUser, async (req, res) => {
       },
     });
 
-    res.status(200).json({ 
-      message: "Liked successfully", 
+    res.status(200).json({
+      message: "Liked successfully",
       review,
-      userLiked: true 
+      userLiked: true,
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Error processing like/unlike" });
   }
 });
-
 // รายงานรีวิว
 router.post("/report/:id", authenticateUser, async (req, res) => {
   try {
     const reviewId = parseInt(req.params.id);
     const { reason } = req.body;
 
-    if (!reason) {
+    if (!reason || reason.trim().length === 0) {
       return res
         .status(400)
         .json({ message: "Reason for reporting is required" });
     }
 
-    const review = await prisma.review.update({
+    const reviewToReport = await prisma.review.findUnique({
       where: { id: reviewId },
+    });
+
+    if (!reviewToReport) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    // ป้องกันไม่ให้ user report review ของตัวเอง
+    if (reviewToReport.userId === req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "คุณไม่สามารถรีพอตรีวิวของตัวเองได้" });
+    }
+
+    // ตรวจสอบว่า user เคย report review นี้หรือยัง
+    const existingReport = await prisma.reviewReport.findFirst({
+      where: {
+        reviewId,
+        userId: req.user.id,
+      },
+    });
+
+    if (existingReport) {
+      return res
+        .status(400)
+        .json({ message: "You have already reported this review" });
+    }
+
+    // สร้าง report ใหม่
+    const report = await prisma.reviewReport.create({
       data: {
-        reported: true,
+        reviewId,
+        userId: req.user.id,
         reason,
       },
     });
 
-    res.status(200).json({ message: "Reported successfully", review });
+    // ตรวจสอบจำนวน report
+    const reportCount = await prisma.reviewReport.count({
+      where: { reviewId },
+    });
+
+    // ถ้ามี report เกิน threshold อาจต้องทำการ flag review
+    if (reportCount >= 3) {
+      // ตั้งเงื่อนไขตามความเหมาะสม
+      await prisma.review.update({
+        where: { id: reviewId },
+        data: { reported: true },
+      });
+    }
+
+    res.status(200).json({
+      message: "Reported successfully",
+      report,
+      reportCount,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error reporting review" });
+    console.error("Error reporting review:", error);
+    res.status(500).json({
+      message: "Error reporting review",
+      errorDetails: error.message,
+    });
+  }
+});
+
+router.get("/:id/reports", authenticateUser, adminCheck, async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+
+    const reports = await prisma.reviewReport.findMany({
+      where: { reviewId },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            id: true, // Add user ID to identify user
+          },
+        },
+        review: {
+          select: {
+            content: true,
+            shop: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Transform reports to include more context
+    const detailedReports = reports.map((report) => ({
+      id: report.id,
+      userId: report.user.id,
+      userName: report.user.name,
+      userEmail: report.user.email,
+      reason: report.reason,
+      createdAt: report.createdAt,
+      reviewContent: report.review.content,
+      shopName: report.review.shop.name,
+    }));
+
+    res.json(detailedReports);
+  } catch (error) {
+    console.error("Error fetching review reports:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching review reports", error: error.message });
   }
 });
 
@@ -297,72 +408,150 @@ router.get("/reported", authenticateUser, adminCheck, async (req, res) => {
   try {
     const reviews = await prisma.review.findMany({
       where: {
-        reported: true,
-        status: "pending",
+        status: "pending", 
       },
       include: {
         user: {
-          select: { name: true },
+          select: { name: true }
         },
         shop: {
-          select: { name: true },
+          select: { name: true }
         },
+        ReviewReport: true, 
+        ReviewLike: true
       },
       orderBy: {
-        createdAt: "desc",
-      },
+        createdAt: "desc"
+      }
     });
-    res.json(reviews);
+
+    // เพิ่มการตรวจสอบก่อนเข้าถึง length
+    const reviewsWithReportCount = reviews.map(review => ({
+      ...review,
+      reportCount: review.ReviewReport ? review.ReviewReport.length : 0, 
+      reported: review.ReviewReport && review.ReviewReport.length > 0
+    }));
+
+    res.json(reviewsWithReportCount);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching reported reviews" });
+    console.error("Error fetching reported reviews:", error);
+    res.status(500).json({ 
+      message: "Error fetching reported reviews",
+      error: error.message 
+    });
   }
 });
 
 router.put("/:id/moderate", authenticateUser, adminCheck, async (req, res) => {
-  try {
-    const reviewId = parseInt(req.params.id);
-    const { status } = req.body;
+  const transaction = await prisma.$transaction(async (prisma) => {
+    try {
+      const reviewId = parseInt(req.params.id);
+      const { status } = req.body;
 
-    const validStatuses = ["pending", "approved", "rejected"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid moderation status",
-        validStatuses,
-      });
-    }
+      // Validate input
+      if (!status) {
+        return res.status(400).json({
+          message: "Status is required",
+        });
+      }
 
-    const existingReview = await prisma.review.findUnique({
-      where: { id: reviewId },
-    });
+      const validStatuses = ["pending", "approved", "rejected"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          message: "Invalid moderation status",
+          validStatuses,
+        });
+      }
 
-    if (!existingReview) {
-      return res.status(404).json({ message: "Review not found" });
-    }
-
-    // If status is approved, delete the review
-    if (status === "approved") {
-      await prisma.review.delete({
+      // Find the existing review
+      const existingReview = await prisma.review.findUnique({
         where: { id: reviewId },
       });
-      return res.json({ message: "Review has been approved and deleted" });
-    }
 
-    // If status is rejected, update the review status
-    const moderatedReview = await prisma.review.update({
-      where: { id: reviewId },
-      data: {
-        status,
-        reported: status === "rejected",
+      if (!existingReview) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      // If status is approved, delete the review and its related records
+      if (status === "approved") {
+        // Delete related ReviewLike records first
+        await prisma.reviewLike.deleteMany({
+          where: { reviewId: reviewId }
+        });
+
+        // Delete related ReviewReport records
+        await prisma.reviewReport.deleteMany({
+          where: { reviewId: reviewId }
+        });
+
+        // Now delete the review
+        await prisma.review.delete({
+          where: { id: reviewId },
+        });
+
+        return { message: "Review has been approved and deleted" };
+      }
+
+      // If status is rejected, update the review status
+      const moderatedReview = await prisma.review.update({
+        where: { id: reviewId },
+        data: {
+          status,
+          reported: status === "rejected",
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            }
+          },
+          shop: {
+            select: {
+              name: true,
+            }
+          }
+        }
+      });
+
+      return moderatedReview;
+    } catch (error) {
+      console.error("Moderation Error:", error);
+      
+      // More detailed error response
+      throw {
+        message: "Error moderating review",
+        errorDetails: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      };
+    }
+  });
+
+  // Send the response based on the transaction result
+  if (transaction.message) {
+    res.json(transaction);
+  } else {
+    res.json(transaction);
+  }
+});
+
+router.get("/report/check/:id", authenticateUser, async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+
+    const existingReport = await prisma.reviewReport.findFirst({
+      where: {
+        reviewId,
+        userId: req.user.id,
       },
     });
 
-    res.json(moderatedReview);
+    res.json({ hasReported: !!existingReport });
   } catch (error) {
-    console.error("Moderation Error:", error);
-    res.status(500).json({
-      message: "Error moderating review",
-      errorDetails: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: "เกิดข้อผิดพลาดในการตรวจสอบการรายงานรีวิว" });
   }
 });
+
 module.exports = router;

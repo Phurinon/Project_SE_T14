@@ -48,21 +48,57 @@ export const updateReview = async (token, reviewId, updateData) => {
 
 // Report review
 export const reportReview = async (token, reviewId, reason) => {
-  if (!reason || reason.trim().length === 0) {
-    throw new Error("Reason is required");
-  }
-
-  const response = await axios.post(
-    `${API}/reviews/report/${reviewId}`,
-    { reason },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  try {
+    const response = await axios.post(
+      `${API}/reviews/report/${reviewId}`,
+      { reason },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      // เซิร์ฟเวอร์ตอบกลับด้วยสถานะข้อผิดพลาด
+      throw new Error(error.response.data.message || "เกิดข้อผิดพลาดในการรายงานรีวิว");
+    } else if (error.request) {
+      // ส่งคำขอแล้วแต่ไม่ได้รับการตอบกลับ
+      throw new Error("ไม่ได้รับการตอบกลับจากเซิร์ฟเวอร์");
+    } else {
+      // เกิดข้อผิดพลาดในการตั้งค่าคำขอ
+      throw new Error("เกิดข้อผิดพลาดในการส่งคำขอรายงานรีวิว");
     }
-  );
+  }
+};
+
+export const getReviewReports = async (token, reviewId) => {
+  const response = await axios.get(`${API}/reviews/${reviewId}/reports`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
   return response.data;
 };
+
+export const checkUserReviewReport = async (token, reviewId) => {
+  try {
+    const response = await axios.get(
+      `${API}/reviews/report/check/${reviewId}`, // เปลี่ยนเส้นทาง
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data.hasReported; // ใช้ hasReported แทน reported
+  } catch (error) {
+    console.log("เกิดข้อผิดพลาดในการตรวจสอบรายงานรีวิว:", error);
+    return false;
+  }
+};
+
 
 // Add like to a review
 export const likeReview = async (token, reviewId) => {

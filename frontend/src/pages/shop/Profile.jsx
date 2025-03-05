@@ -82,10 +82,6 @@ const Profile = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const loadingToast = toast.loading("กำลังอัพเดทข้อมูลร้านค้า...", {
-      position: "top-center",
-    });
-
     try {
       // Prepare data for update
       const updateData = {};
@@ -110,28 +106,10 @@ const Profile = () => {
       // Ensure at least one field is being updated
       if (Object.keys(updateData).length > 0) {
         await updateShop(shopId, updateData, userToken);
-
-        toast.update(loadingToast, {
-          render: "อัพเดทข้อมูลร้านค้าสำเร็จ!",
-          type: "success",
-          isLoading: false,
-          autoClose: 3000,
-        });
-      } else {
-        toast.update(loadingToast, {
-          render: "ไม่มีการเปลี่ยนแปลงข้อมูล",
-          type: "info",
-          isLoading: false,
-          autoClose: 3000,
-        });
       }
     } catch (error) {
-      toast.update(loadingToast, {
-        render: error.response?.data?.message || "เกิดข้อผิดพลาด",
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-      });
+      toast.error("ไม่สามารถบันทึกข้อมูลได้");
+      console.error("Error updating shop data:", error);
     } finally {
       setIsSubmitting(false);
     }

@@ -29,7 +29,7 @@ export default function SidebarAdmin() {
     <div className="relative">
       <div className="fixed left-0 top-0 w-64 h-full bg-gradient-to-b from-slate-800 via-slate-900 to-zinc-950 p-4 z-50 transition-all duration-300 shadow-xl">
         <Link
-          to="/"
+          to="/user"
           className="flex items-center gap-3 pb-6 border-b border-slate-700/30"
         >
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
