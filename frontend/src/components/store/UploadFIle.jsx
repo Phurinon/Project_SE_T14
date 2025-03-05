@@ -1,110 +1,140 @@
-import { useState } from 'react'
-import { toast } from 'react-toastify'
-import Resize from 'react-image-file-resizer'
-import { createShopImages, deleteShopImages } from '../../api/shop'
-import { Loader } from 'lucide-react'
-import useDusthStore from '../../Global Store/DusthStore'
+import { useState, useRef } from "react";
+import { toast } from "react-toastify";
+import Resize from "react-image-file-resizer";
+import { createShopImages, deleteShopImages } from "../../api/shop";
+import { X, ImagePlus } from "lucide-react";
+import useDusthStore from "../../Global Store/DusthStore";
 
 const UploadFile = ({ form, setForm }) => {
-    const token = useDusthStore((state) => state.token)
-    const [isLoading, setIsLoading] = useState(false)
+  const token = useDusthStore((state) => state.token);
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
-    const handleOnChange = async (e) => {
-        setIsLoading(true)
-        const files = e.target.files
-        if (!files) {
-            setIsLoading(false)
-            return
-        }
+  const handleFileUpload = (files) => {
+    if (isLoading) return;
 
-        try {
-            let allFiles = [...form.images]
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i]
-                if (!file.type.startsWith('image/')) {
-                    toast.error(`File ${file.name} is not an image`)
-                    continue
-                }
+    setIsLoading(true);
+    let allFiles = [...form.images];
+    let uploadPromises = [];
 
-                const imageData = await new Promise((resolve) => {
-                    Resize.imageFileResizer(
-                        file,
-                        720,
-                        720,
-                        "JPEG",
-                        80, // Reduced quality for smaller file size
-                        0,
-                        (data) => resolve(data),
-                        "base64"
-                    )
-                })
+    for (let file of files) {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`File ${file.name} is not a valid image`);
+        continue;
+      }
 
-                const response = await createShopImages(imageData, token)
-                allFiles.push(response)
-                toast.success('Image uploaded successfully!')
-            }
+      const uploadPromise = new Promise((resolve, reject) => {
+        Resize.imageFileResizer(
+          file,
+          720,
+          720,
+          "JPEG",
+          80,
+          0,
+          (data) => {
+            createShopImages(data, token)
+              .then((res) => resolve(res))
+              .catch((err) => reject(err));
+          },
+          "base64"
+        );
+      });
 
-            setForm(prev => ({
-                ...prev,
-                images: allFiles
-            }))
-        } catch (error) {
-            console.error('Upload error:', error)
-            toast.error('Error uploading image')
-        } finally {
-            setIsLoading(false)
-        }
+      uploadPromises.push(uploadPromise);
     }
 
-    const handleDelete = async (public_id) => {
-        try {
-            await deleteShopImages(public_id, token)
-            setForm(prev => ({
-                ...prev,
-                images: prev.images.filter(item => item.public_id !== public_id)
-            }))
-            toast.success('Image deleted successfully')
-        } catch (error) {
-            console.error('Delete error:', error)
-            toast.error('Error deleting image')
-        }
-    }
+    Promise.all(uploadPromises)
+      .then((uploadedImages) => {
+        const newFiles = [...allFiles, ...uploadedImages];
+        setForm({
+          ...form,
+          images: newFiles,
+        });
+        setIsLoading(false);
+        toast.success("Images uploaded successfully!");
+      })
+      .catch((err) => {
+        console.error("Upload error:", err);
+        setIsLoading(false);
+        toast.error("Error uploading images");
+      });
+  };
 
-    return (
-        <div className='my-4'>
-            <div className='flex flex-wrap mx-4 gap-4 my-4'>
-                {isLoading && <Loader className='w-16 h-16 animate-spin'/>}
-                
-                {form.images.map((item, index) => (
-                    <div className='relative' key={index}>
-                        <img
-                            className='w-24 h-24 hover:scale-105 object-cover rounded'
-                            src={item.url}
-                            alt={`Upload ${index + 1}`}
-                        />
-                        <button
-                            onClick={() => handleDelete(item.public_id)}
-                            className='absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600'
-                        >
-                            ×
-                        </button>
-                    </div>
-                ))}
-            </div>
+  const handleDelete = (public_id) => {
+    deleteShopImages(public_id, token)
+      .then((res) => {
+        const filterImages = form.images.filter(
+          (item) => item.public_id !== public_id
+        );
 
-            <div>
-                <input
-                    onChange={handleOnChange}
-                    type='file'
-                    name='images'
-                    multiple
-                    accept="image/*"
-                    className="w-full max-w-xs"
-                />
+        setForm({
+          ...form,
+          images: filterImages,
+        });
+        toast.success(res.message || "Image deleted successfully");
+      })
+      .catch((err) => {
+        console.error("Delete error:", err);
+        toast.error(
+          err.response?.data?.message || err.message || "Failed to delete image"
+        );
+      });
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Upload Button */}
+      {form.images.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {form.images.map((item, index) => (
+            <div
+              key={index}
+              className="relative w-24 h-24 rounded-lg overflow-hidden shadow-md"
+            >
+              <img
+                src={item.url}
+                alt={`Upload ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              <button
+                onClick={() => handleDelete(item.public_id)}
+                className="absolute top-1 right-1 bg-red-500 text-white 
+                                           rounded-full p-1 hover:bg-red-600 
+                                           transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+          ))}
         </div>
-    )
-}
+      )}
+      <div
+        className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 
+                           text-center cursor-pointer hover:border-blue-500 
+                           transition-colors duration-300"
+        onClick={triggerFileInput}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={(e) => handleFileUpload(e.target.files)}
+          className="hidden"
+        />
+        <div className="flex flex-col items-center justify-center">
+          <ImagePlus className="w-10 h-10 text-gray-400 mb-2" />
+          <p className="text-sm text-gray-600">
+            {isLoading ? "Uploading..." : "Upload Images"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-export default UploadFile
+export default UploadFile;

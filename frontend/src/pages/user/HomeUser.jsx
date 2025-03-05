@@ -279,13 +279,13 @@ const ShopPopup = ({ shop, safetyLevels }) => {
   };
 
   return (
-    <div className="p-3 bg-gray-900 text-gray-100 rounded-lg shadow-lg border border-gray-700 min-w-64 w-80">
+    <div className="p-3 bg-gray-900 text-gray-100 rounded-lg shadow-lg border border-gray-700 mx-auto max-w-[315px] min-w-[18rem]">
       <h3 className="text-lg font-bold mb-2 text-white">{shop.name}</h3>
       
       {/* Image Gallery */}
       {hasImages ? (
         <div className="relative mb-3">
-          <div className="relative w-full h-40 rounded-lg overflow-hidden bg-gray-800">
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-800">
             <img 
               src={shop.images[currentImageIndex].secure_url} 
               alt={`${shop.name} - รูปที่ ${currentImageIndex + 1}`} 
@@ -390,7 +390,7 @@ const ShopPopup = ({ shop, safetyLevels }) => {
               <Bookmark
                 className={`w-4 h-4 ${isBookmarked ? "fill-current" : ""} ${isBookmarked ? getCategoryColor() : ""}`}
               />
-              <span className={`text-nowrap ${isBookmarked ? getCategoryColor() : ""}`}>
+              <span className={` ${isBookmarked ? getCategoryColor() : ""}`}>
                 {isBookmarked ? getCategoryLabel() : "บันทึก"}
               </span>
             </button>

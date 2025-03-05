@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Star, Clock, TrendingUp } from 'lucide-react';
+import { 
+  MapPin, Star, Clock, TrendingUp 
+} from 'lucide-react';
 import { getMyShop } from '../../api/shop';
 import { getShopReviews } from '../../api/reviews';
 import useDusthStore from '../../Global Store/DusthStore';
@@ -7,33 +9,35 @@ import useDusthStore from '../../Global Store/DusthStore';
 const DashboardCard = ({ title, value, icon: Icon, trend, subtitle, loading }) => {
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:scale-105">
         <div className="animate-pulse flex justify-between items-center">
           <div className="space-y-3">
-            <div className="h-4 w-24 bg-gray-200 rounded"></div>
-            <div className="h-6 w-32 bg-gray-200 rounded"></div>
-            {subtitle && <div className="h-4 w-36 bg-gray-200 rounded"></div>}
+            <div className="h-4 w-24 bg-white/10 rounded"></div>
+            <div className="h-6 w-32 bg-white/10 rounded"></div>
+            {subtitle && <div className="h-4 w-36 bg-white/10 rounded"></div>}
           </div>
-          <div className="h-8 w-8 bg-gray-200 rounded"></div>
+          <div className="h-8 w-8 bg-white/10 rounded"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border">
+    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg p-6 transition-all duration-300 hover:scale-105">
       <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-sm text-gray-500">{title}</p>
-          <h3 className="text-2xl font-semibold">{value}</h3>
+        <div className="space-y-2">
+          <p className="text-sm text-gray-400">{title}</p>
+          <h3 className="text-2xl font-bold ">{value}</h3>
           {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
           {trend !== undefined && (
-            <p className={`text-sm ${trend >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center gap-1`}>
+            <p className={`text-sm flex items-center gap-1 ${trend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
               {trend >= 0 ? '+' : ''}{trend}%
             </p>
           )}
         </div>
-        <Icon className="h-8 w-8 text-blue-500" />
+        <div className="p-3 rounded-xl bg-white/10">
+          <Icon className="h-8 w-8 /70" />
+        </div>
       </div>
     </div>
   );
@@ -58,11 +62,9 @@ const ShopDashboard = () => {
         setLoading(true);
         setError(null);
         
-        // Get shop data
         const shop = await getMyShop(token);
         setShopData(shop);
         
-        // Get shop reviews if shop exists
         if (shop && shop.id) {
           const shopReviews = await getShopReviews(shop.id);
           setReviews(shopReviews);
@@ -76,7 +78,7 @@ const ShopDashboard = () => {
     };
 
     fetchDashboardData();
-  }, [token]); // Add token as dependency
+  }, [token]);
 
   const calculateMetrics = () => {
     if (!reviews.length) return {
@@ -115,8 +117,8 @@ const ShopDashboard = () => {
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+      <div className="p-6 min-h-screen ">
+        <div className="bg-red-900/30 border border-red-800 text-red-300 px-4 py-3 rounded-lg">
           {error}
         </div>
       </div>
@@ -124,12 +126,12 @@ const ShopDashboard = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 min-h-screen  space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-3xl font-bold ">Dashboard</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <DashboardCard 
           title="คะแนนรีวิวเฉลี่ย"
           value={`${metrics.averageRating}/5.0`}

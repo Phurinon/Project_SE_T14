@@ -38,11 +38,11 @@ router.get("/", async (req, res) => {
         },
       },
     });
-    const types = [...new Set(shops.map(shop => shop.type))];
-    
+    const types = [...new Set(shops.map((shop) => shop.type))];
+
     res.json({
       shops,
-      types
+      types,
     });
   } catch (error) {
     console.log(error);
@@ -121,10 +121,10 @@ router.post("/", authenticateUser, async (req, res) => {
 
     // Basic validation
     if (!name || !address || !phone || !email) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
         message: "Missing required fields",
-        required: "name, address, phone, email are required"
+        required: "name, address, phone, email are required",
       });
     }
 
@@ -132,7 +132,7 @@ router.post("/", authenticateUser, async (req, res) => {
     if (!images || !Array.isArray(images)) {
       return res.status(400).json({
         success: false,
-        message: "Images must be an array"
+        message: "Images must be an array",
       });
     }
 
@@ -143,14 +143,14 @@ router.post("/", authenticateUser, async (req, res) => {
     if (latitude && isNaN(parsedLatitude)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid latitude format"
+        message: "Invalid latitude format",
       });
     }
 
     if (longitude && isNaN(parsedLongitude)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid longitude format"
+        message: "Invalid longitude format",
       });
     }
 
@@ -183,10 +183,10 @@ router.post("/", authenticateUser, async (req, res) => {
           user: {
             select: {
               name: true,
-              email: true
-            }
-          }
-        }
+              email: true,
+            },
+          },
+        },
       });
 
       const userUpdate = await prisma.user.update({
@@ -207,45 +207,47 @@ router.post("/", authenticateUser, async (req, res) => {
           id: updatedUser.id,
           name: updatedUser.name,
           email: updatedUser.email,
-          role: updatedUser.role
-        }
-      }
+          role: updatedUser.role,
+        },
+      },
     });
-
   } catch (error) {
     console.error("Shop creation error:", error);
 
     // Handle specific Prisma errors
-    if (error.code === 'P2002') {
-      return res.status(400).json({ 
+    if (error.code === "P2002") {
+      return res.status(400).json({
         success: false,
-        message: "A shop with this name already exists"
+        message: "A shop with this name already exists",
       });
     }
 
-    if (error.code === 'P2003') {
+    if (error.code === "P2003") {
       return res.status(400).json({
         success: false,
-        message: "Invalid user ID or reference constraint failed" 
+        message: "Invalid user ID or reference constraint failed",
       });
     }
 
     // Handle validation errors from Prisma
-    if (error.code === 'P2025') {
+    if (error.code === "P2025") {
       return res.status(400).json({
         success: false,
-        message: "Invalid record operation" 
+        message: "Invalid record operation",
       });
     }
 
     // Generic error response
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: "Error creating shop",
-      error: process.env.NODE_ENV === 'development' ? {
-        message: error.message,
-        code: error.code
-      } : undefined
+      error:
+        process.env.NODE_ENV === "development"
+          ? {
+              message: error.message,
+              code: error.code,
+            }
+          : undefined,
     });
   }
 });
@@ -255,6 +257,7 @@ router.put("/:id", authenticateUser, async (req, res) => {
   try {
     const shop = await prisma.shop.findUnique({
       where: { id: parseInt(req.params.id) },
+      include: { images: true } // Include existing images
     });
 
     if (!shop) {
@@ -265,43 +268,111 @@ router.put("/:id", authenticateUser, async (req, res) => {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const updatedShop = await prisma.shop.update({
-      where: { id: parseInt(req.params.id) },
-      data: req.body,
+    const {
+      name,
+      address,
+      description,
+      phone,
+      email,
+      openTime,
+      closeTime,
+      latitude,
+      longitude,
+      type,
+      images // New and existing images
+    } = req.body;
+
+    // Basic validation
+    if (!name || !address || !phone || !email) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+        required: "name, address, phone, email are required",
+      });
+    }
+
+    // Validate images
+    if (!images || !Array.isArray(images)) {
+      return res.status(400).json({
+        success: false,
+        message: "Images must be an array",
+      });
+    }
+
+    // Transaction to handle shop and image updates
+    const updatedShop = await prisma.$transaction(async (prisma) => {
+      // Remove old images that are not in the new images array
+      const existingImagePublicIds = shop.images.map(img => img.public_id);
+      const newImagePublicIds = images.map(img => img.public_id);
+      
+      // Identify images to delete
+      const imagesToDelete = existingImagePublicIds.filter(
+        id => !newImagePublicIds.includes(id)
+      );
+
+      // Delete images from Cloudinary
+      for (const publicId of imagesToDelete) {
+        await cloudinary.uploader.destroy(publicId);
+      }
+
+      // Delete old image records from database
+      await prisma.shopImage.deleteMany({
+        where: { 
+          shopId: shop.id,
+          public_id: { in: imagesToDelete }
+        }
+      });
+
+      // Update shop with new data
+      const updatedShopData = await prisma.shop.update({
+        where: { id: shop.id },
+        data: {
+          name: name.trim(),
+          address: address.trim(),
+          description: description?.trim() || "",
+          phone: phone.trim(),
+          email: email.trim().toLowerCase(),
+          openTime: openTime || null,
+          closeTime: closeTime || null,
+          latitude: latitude ? parseFloat(latitude) : null,
+          longitude: longitude ? parseFloat(longitude) : null,
+          type: type?.trim() || "other",
+          
+          // Update or create images
+          images: {
+            deleteMany: {}, // Remove all existing images
+            create: images.map((item) => ({
+              asset_id: item.asset_id || "",
+              public_id: item.public_id || "",
+              url: item.url || "",
+              secure_url: item.secure_url || item.url || "",
+            })),
+          },
+        },
+        include: {
+          images: true,
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return updatedShopData;
     });
 
-    res.json(updatedShop);
+    res.json({
+      success: true,
+      message: "Shop updated successfully",
+      data: updatedShop,
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Error updating shop" });
+    console.error("Shop update error:", error);
   }
 });
 
-// Delete shop
-router.delete("/:id", authenticateUser, async (req, res) => {
-  try {
-    const shop = await prisma.shop.findUnique({
-      where: { id: parseInt(req.params.id) },
-    });
-
-    if (!shop) {
-      return res.status(404).json({ message: "Shop not found" });
-    }
-
-    if (shop.userId !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized" });
-    }
-
-    await prisma.shop.delete({
-      where: { id: parseInt(req.params.id) },
-    });
-
-    res.json({ message: "Deleted successfully" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Error deleting shop" });
-  }
-});
 
 router.post("/createImages", authenticateUser, async (req, res) => {
   try {
@@ -312,7 +383,7 @@ router.post("/createImages", authenticateUser, async (req, res) => {
     const result = await cloudinary.uploader.upload(req.body.image, {
       public_id: `Shop-${Date.now()}`,
       resource_type: "auto",
-      folder: "DustAir",
+      folder: "DustWatch",
     });
 
     res.status(200).json(result);
@@ -327,18 +398,22 @@ router.post("/createImages", authenticateUser, async (req, res) => {
 router.delete("/removeImage", authenticateUser, async (req, res) => {
   try {
     const { public_id } = req.body;
+    
     if (!public_id) {
-      return res.status(400).json({ message: "No public_id provided" });
+      return res.status(400).json({ message: "Public ID is required" });
     }
 
-    const result = await cloudinary.uploader.destroy(public_id);
-    res.status(200).json({ message: "Image removed successfully", result });
-  } catch (err) {
-    console.error("Delete error:", err);
-    res
-      .status(500)
-      .json({ message: "Error deleting image", error: err.message });
+    cloudinary.uploader.destroy(public_id, (error, result) => {
+      if (error) {
+        return res.status(500).json({ message: "Error deleting image", error });
+      }
+      res.json({ message: "Image removed successfully", result });
+    });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 module.exports = router;

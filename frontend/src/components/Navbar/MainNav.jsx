@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { ChevronDown, User, LogOut, Store, Home, Bookmark, Search, MapPin, Star } from "lucide-react";
+import { ChevronDown, User, LogOut, Store, Home, Bookmark, Search, MapPin, Star, ShoppingBag, Shield } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { getCurrentUserProfile } from "../../api/users";
 import { getAllShops } from "../../api/shop";
@@ -285,6 +285,40 @@ export default function MainNav() {
                           </span>
                         </div>
                       </NavLink>
+
+                      {/* Conditional rendering based on user role */}
+                      {profileData.role === 'store' && (
+                        <NavLink
+                          to={`/shop`}
+                          className="group w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#31343f] transition-all duration-300"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 group-hover:from-green-600 group-hover:to-emerald-700 transition-colors duration-300 shadow-md">
+                            <ShoppingBag className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-white group-hover:text-green-300">
+                              หน้าร้านค้า
+                            </span>
+                          </div>
+                        </NavLink>
+                      )}
+
+                      {profileData.role === 'admin' && (
+                        <NavLink
+                          to="/admin"
+                          className="group w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-[#31343f] transition-all duration-300"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 group-hover:from-purple-600 group-hover:to-indigo-700 transition-colors duration-300 shadow-md">
+                          <Shield className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-white group-hover:text-purple-300">
+                              หน้าแอดมิน
+                            </span>
+                          </div>
+                        </NavLink>
+                      )}
+
                       <button
                         onClick={() => {
                           logout();

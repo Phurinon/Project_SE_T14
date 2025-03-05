@@ -20,10 +20,10 @@ export default function SidebarShop() {
 
   return (
     <div className="relative">
-      <div className="fixed left-0 top-0 w-64 h-full bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950 p-4 z-50 transition-all duration-300 shadow-xl">
+      <div className="fixed left-0 top-0 w-64 h-full bg-[#212329] p-4 z-50 transition-all duration-300 shadow-xl">
         {/* Logo Section */}
         <Link
-          to="/"
+          to="/user"
           className="flex items-center gap-3 pb-6 border-b border-slate-700/30"
         >
           <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600">
@@ -62,7 +62,7 @@ export default function SidebarShop() {
         <div className="absolute bottom-4 left-4 right-4">
           <button
             onClick={handleLogout}
-            className="flex items-center w-full py-3 px-4 text-purple-100 hover:bg-pink-500/20 hover:text-pink-300 rounded-lg transition-all duration-200"
+            className="flex items-center w-full py-3 px-4 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all duration-200"
           >
             <LogOut className="w-5 h-5 mr-3" />
             <span className="font-medium">ออกจากระบบ</span>

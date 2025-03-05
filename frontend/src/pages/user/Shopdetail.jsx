@@ -197,7 +197,10 @@ const ShopDetail = () => {
   const [reviews, setReviews] = useState([]);
   const [selectedReviewToReport, setSelectedReviewToReport] = useState(null);
   const [hasReviewed, setHasReviewed] = useState(false);
-  const [userLikes, setUserLikes] = useState(new Set());
+  const [userLikes, setUserLikes] = useState(() => {
+    const savedLikes = localStorage.getItem(`shop_likes_${id}`);
+    return savedLikes ? new Set(JSON.parse(savedLikes)) : new Set();
+  });
   const [expandedDescription, setExpandedDescription] = useState(false);
   const [newReview, setNewReview] = useState({
     content: "",
@@ -231,7 +234,13 @@ const ShopDetail = () => {
                 )
                 .map(review => review.id)
             );
-            setUserLikes(likedReviews);
+            const mergedLikes = new Set([
+              ...userLikes,
+              ...serverLikedReviews
+            ]);
+            
+            setUserLikes(mergedLikes);
+            localStorage.setItem(`shop_likes_${id}`, JSON.stringify([...mergedLikes]));
           }
         }
   
@@ -377,6 +386,7 @@ const ShopDetail = () => {
         } else {
           newLikes.delete(reviewId);
         }
+        localStorage.setItem(`shop_likes_${id}`, JSON.stringify([...newLikes]));
         return newLikes;
       });
       

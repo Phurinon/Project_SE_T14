@@ -1,9 +1,31 @@
 import { useState, useEffect } from "react";
-import { Star } from "lucide-react";
+import { 
+  Star, 
+  MessageCircle, 
+  User, 
+  CheckCircle, 
+  AlertCircle 
+} from "lucide-react";
 import { getShopReviews, replyToReview } from "../../api/reviews";
 import { getMyShop } from "../../api/shop";
 import useDusthStore from "../../Global Store/DusthStore";
 import { toast } from "react-toastify";
+
+const StarRating = ({ rating, size = 5, className = "" }) => (
+  <div className="flex items-center">
+    {[...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        className={`${
+          i < rating 
+            ? "text-yellow-500 fill-yellow-500" 
+            : "text-gray-300"
+        } ${className}`}
+        size={size}
+      />
+    ))}
+  </div>
+);
 
 const ReviewCard = ({ review, isShopOwner, onReplySubmit }) => {
   const [isReplying, setIsReplying] = useState(false);
@@ -26,38 +48,26 @@ const ReviewCard = ({ review, isShopOwner, onReplySubmit }) => {
     }
   };
 
-  // ถ้าไม่มีข้อมูล user ให้แสดง placeholder หรือข้อความทดแทน
   const userName = review.user?.name || "ผู้ใช้";
   const userAvatar = review.user?.name 
     ? `https://robohash.org/${review.user.name}?size=40x40`
     : `https://robohash.org/default?size=40x40`;
 
   return (
-    <div className="border rounded-lg p-4 mb-4 bg-white shadow-sm">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center space-x-2">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-5 mb-4 transition-all duration-300 hover:shadow-xl">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center space-x-3">
           <img
             src={userAvatar}
             alt="User avatar"
-            className="w-10 h-10 rounded-full"
+            className="w-12 h-12 rounded-full border-2 border-gray-200 object-cover"
           />
           <div>
-            <h3 className="font-medium">{userName}</h3>
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-4 w-4 ${
-                    i < review.rating
-                      ? "text-yellow-400 fill-yellow-400"
-                      : "text-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
+            <h3 className="font-semibold text-gray-800">{userName}</h3>
+            <StarRating rating={review.rating} size={18} />
           </div>
         </div>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-gray-500 font-light">
           {new Date(review.createdAt).toLocaleDateString("th-TH", {
             day: "numeric",
             month: "short",
@@ -67,53 +77,53 @@ const ReviewCard = ({ review, isShopOwner, onReplySubmit }) => {
       </div>
 
       {review.content && (
-        <div className="mb-2">
-          <p className="text-gray-700">{review.content}</p>
-        </div>
-      )}
-
-      {review.comment && (
-        <div className="mb-2">
-          <p className="text-gray-700">{review.comment}</p>
+        <div className="mb-4 bg-gray-50 p-3 rounded-lg">
+          <p className="text-gray-700 italic">{review.content}</p>
         </div>
       )}
 
       {review.reply && (
-        <div className="bg-gray-50 p-3 rounded-lg ml-8 mb-2">
-          <p className="text-sm font-medium mb-1">การตอบกลับของร้านค้า</p>
-          <p className="text-sm text-gray-600">{review.reply}</p>
+        <div className="bg-blue-50 p-3 rounded-lg ml-8 mb-4 border-l-4 border-blue-300">
+          <div className="flex items-center mb-2">
+            <CheckCircle className="mr-2 text-blue-500" size={18} />
+            <p className="text-sm font-medium text-blue-800">การตอบกลับของร้านค้า</p>
+          </div>
+          <p className="text-sm text-gray-700">{review.reply}</p>
         </div>
       )}
 
       {isShopOwner && !review.reply && !isReplying && (
         <button
           onClick={() => setIsReplying(true)}
-          className="text-blue-500 text-sm hover:underline"
+          className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
         >
-          ตอบกลับ
+          <MessageCircle className="mr-2" size={16} />
+          <span className="text-sm font-medium">ตอบกลับ</span>
         </button>
       )}
 
       {isReplying && (
-        <div className="mt-2">
+        <div className="mt-4 space-y-3">
           <textarea
             value={replyText}
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="พิมพ์ข้อความตอบกลับ..."
-            className="w-full p-2 border rounded-lg mb-2"
-            rows="3"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-200 transition-all"
+            rows="4"
           />
-          <div className="flex space-x-2">
+          <div className="flex space-x-3">
             <button
               onClick={handleSubmitReply}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+              className="bg-blue-500 text-white px-5 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
             >
+              <CheckCircle className="mr-2" size={16} />
               ส่งข้อความ
             </button>
             <button
               onClick={() => setIsReplying(false)}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-600 hover:text-gray-800 transition-colors flex items-center"
             >
+              <AlertCircle className="mr-2" size={16} />
               ยกเลิก
             </button>
           </div>
@@ -166,7 +176,6 @@ const Reviews = () => {
     try {
       const updatedReview = await replyToReview(token, reviewId, replyText);
       
-      // อัพเดทข้อมูลรีวิวในส่วนของ state โดยรักษาข้อมูล user เดิมไว้
       setReviews((prevReviews) =>
         prevReviews.map((review) =>
           review.id === reviewId
@@ -185,36 +194,35 @@ const Reviews = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">รีวิวจากลูกค้า</h1>
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl font-bold">{averageRating.toFixed(1)}</span>
-          <div className="flex">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-5 w-5 ${
-                  i < Math.round(averageRating)
-                    ? "text-yellow-400 fill-yellow-400"
-                    : "text-gray-300"
-                }`}
-              />
-            ))}
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8 bg-blue-50 p-5 rounded-xl shadow-md">
+        <div className="flex items-center space-x-3">
+          <User className="text-blue-600" size={32} />
+          <h1 className="text-3xl font-bold text-gray-800">รีวิวจากลูกค้า</h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <span className="text-3xl font-bold text-blue-600">
+            {averageRating.toFixed(1)}
+          </span>
+          <div className="flex items-center space-x-1">
+            <StarRating rating={Math.round(averageRating)} size={24} />
+            <span className="text-gray-500 ml-2">({reviews.length} รีวิว)</span>
           </div>
-          <span className="text-gray-500">({reviews.length} รีวิว)</span>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {reviews.length === 0 ? (
-          <p className="text-center text-gray-500">ยังไม่มีรีวิว</p>
+          <div className="text-center bg-gray-100 p-8 rounded-xl">
+            <MessageCircle className="mx-auto mb-4 text-gray-400" size={48} />
+            <p className="text-xl text-gray-600">ยังไม่มีรีวิว</p>
+          </div>
         ) : (
           reviews.map((review) => (
             <ReviewCard
