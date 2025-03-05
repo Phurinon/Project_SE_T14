@@ -253,19 +253,19 @@ router.post("/", authenticateUser, async (req, res) => {
 });
 
 // Update shop
-router.put("/:id", authenticateUser, async (req, res) => {
+router.put('/:id', authenticateUser, async (req, res) => {
   try {
     const shop = await prisma.shop.findUnique({
       where: { id: parseInt(req.params.id) },
-      include: { images: true } // Include existing images
+      include: { images: true },
     });
 
     if (!shop) {
-      return res.status(404).json({ message: "Shop not found" });
+      return res.status(404).json({ message: 'Shop not found' });
     }
 
-    if (shop.userId !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Not authorized" });
+    if (shop.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
     }
 
     const {
@@ -279,100 +279,59 @@ router.put("/:id", authenticateUser, async (req, res) => {
       latitude,
       longitude,
       type,
-      images // New and existing images
+      images, 
     } = req.body;
 
-    // Basic validation
-    if (!name || !address || !phone || !email) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-        required: "name, address, phone, email are required",
-      });
-    }
+    const updateData = {
+      ...(name && { name: name.trim() }),
+      ...(address && { address: address.trim() }),
+      ...(description && { description: description.trim() }),
+      ...(phone && { phone: phone.trim() }),
+      ...(email && { email: email.trim().toLowerCase() }),
+      ...(openTime && { openTime }),
+      ...(closeTime && { closeTime }),
+      ...(latitude && { latitude: parseFloat(latitude) }),
+      ...(longitude && { longitude: parseFloat(longitude) }),
+      ...(type && { type: type.trim() }),
+    };
 
-    // Validate images
-    if (!images || !Array.isArray(images)) {
-      return res.status(400).json({
-        success: false,
-        message: "Images must be an array",
-      });
-    }
-
-    // Transaction to handle shop and image updates
-    const updatedShop = await prisma.$transaction(async (prisma) => {
-      // Remove old images that are not in the new images array
-      const existingImagePublicIds = shop.images.map(img => img.public_id);
-      const newImagePublicIds = images.map(img => img.public_id);
-      
-      // Identify images to delete
-      const imagesToDelete = existingImagePublicIds.filter(
-        id => !newImagePublicIds.includes(id)
-      );
-
-      // Delete images from Cloudinary
-      for (const publicId of imagesToDelete) {
-        await cloudinary.uploader.destroy(publicId);
-      }
-
-      // Delete old image records from database
-      await prisma.shopImage.deleteMany({
-        where: { 
-          shopId: shop.id,
-          public_id: { in: imagesToDelete }
+    // จัดการรูปภาพอย่างปลอดภัย
+    if (images && Array.isArray(images) && images.length > 0) {
+      updateData.images = {
+        // ลบรูปเก่าทั้งหมดก่อน
+        deleteMany: {},
+        // สร้างรูปใหม่
+        create: {
+          asset_id: images[0].asset_id || '',
+          public_id: images[0].public_id || '',
+          url: images[0].url || '',
+          secure_url: images[0].secure_url || images[0].url || '',
         }
-      });
+      };
+    }
 
-      // Update shop with new data
-      const updatedShopData = await prisma.shop.update({
-        where: { id: shop.id },
-        data: {
-          name: name.trim(),
-          address: address.trim(),
-          description: description?.trim() || "",
-          phone: phone.trim(),
-          email: email.trim().toLowerCase(),
-          openTime: openTime || null,
-          closeTime: closeTime || null,
-          latitude: latitude ? parseFloat(latitude) : null,
-          longitude: longitude ? parseFloat(longitude) : null,
-          type: type?.trim() || "other",
-          
-          // Update or create images
-          images: {
-            deleteMany: {}, // Remove all existing images
-            create: images.map((item) => ({
-              asset_id: item.asset_id || "",
-              public_id: item.public_id || "",
-              url: item.url || "",
-              secure_url: item.secure_url || item.url || "",
-            })),
-          },
-        },
-        include: {
-          images: true,
-          user: {
-            select: {
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
-
-      return updatedShopData;
+    const updatedShop = await prisma.shop.update({
+      where: { id: shop.id },
+      data: updateData,
+      include: {
+        images: true,
+        user: { select: { name: true, email: true } },
+      },
     });
 
     res.json({
       success: true,
-      message: "Shop updated successfully",
+      message: 'Shop updated successfully',
       data: updatedShop,
     });
   } catch (error) {
-    console.error("Shop update error:", error);
+    console.error('Shop update error:', error);
+    res.status(500).json({ 
+      message: 'Error updating shop', 
+      error: error.message 
+    });
   }
 });
-
 
 router.post("/createImages", authenticateUser, async (req, res) => {
   try {
@@ -398,7 +357,7 @@ router.post("/createImages", authenticateUser, async (req, res) => {
 router.delete("/removeImage", authenticateUser, async (req, res) => {
   try {
     const { public_id } = req.body;
-    
+
     if (!public_id) {
       return res.status(400).json({ message: "Public ID is required" });
     }
@@ -414,6 +373,5 @@ router.delete("/removeImage", authenticateUser, async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
-
 
 module.exports = router;

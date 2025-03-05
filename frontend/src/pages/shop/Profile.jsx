@@ -6,7 +6,6 @@ import {
   Mail,
   MapPin,
   Clock,
-  Image,
   FileText,
   Tag,
   Save,
@@ -15,7 +14,6 @@ import {
   Calendar,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import UploadFile from "../../components/store/UploadFIle";
 import useDusthStore from "../../Global Store/DusthStore";
 import { getMyShop, updateShop } from "../../api/shop";
 
@@ -39,6 +37,8 @@ const Profile = () => {
   const userToken = useDusthStore((state) => state.token);
   const [shopId, setShopId] = useState(null);
 
+  const [changedFields, setChangedFields] = useState({});
+
   useEffect(() => {
     fetchShopData();
   }, []);
@@ -48,7 +48,7 @@ const Profile = () => {
       setIsLoading(true);
       const data = await getMyShop(userToken);
 
-      setForm({
+      const formData = {
         name: data.name || "",
         address: data.address || "",
         description: data.description || "",
@@ -60,7 +60,9 @@ const Profile = () => {
         longitude: data.longitude || "",
         type: data.type || "",
         images: data.images || [],
-      });
+      };
+
+      setForm(formData);
       setShopId(data.id);
     } catch (error) {
       toast.error("ไม่สามารถดึงข้อมูลร้านค้าได้");
@@ -76,6 +78,11 @@ const Profile = () => {
       ...prev,
       [name]: value,
     }));
+
+    setChangedFields((prev) => ({
+      ...prev,
+      [name]: true,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -86,26 +93,34 @@ const Profile = () => {
       // Prepare data for update
       const updateData = {};
 
-      // Only include non-empty values
-      Object.keys(form).forEach((key) => {
-        if (form[key] !== "" && form[key] !== null && form[key] !== undefined) {
-          // Special handling for images
-          if (key === "images") {
-            updateData.images = form.images.map((img) => ({
-              asset_id: img.asset_id,
-              public_id: img.public_id,
-              url: img.url,
-              secure_url: img.secure_url,
-            }));
-          } else {
-            updateData[key] = form[key];
+      Object.keys(changedFields).forEach((key) => {
+        if (key === "images") {
+          // Ensure images is an array and map it safely
+          const imagesToUpdate = Array.isArray(form.images)
+            ? form.images.map((img) => ({
+                asset_id: img.asset_id || "",
+                public_id: img.public_id || "",
+                url: img.url || "",
+                secure_url: img.secure_url || img.url || "",
+              }))
+            : [];
+
+          if (imagesToUpdate.length > 0) {
+            updateData.images = imagesToUpdate;
           }
+        } else if (form[key] !== "") {
+          updateData[key] = form[key];
         }
       });
 
-      // Ensure at least one field is being updated
       if (Object.keys(updateData).length > 0) {
         await updateShop(shopId, updateData, userToken);
+        toast.success("บันทึกข้อมูลสำเร็จ");
+
+        // Reset changed fields after successful update
+        setChangedFields({});
+      } else {
+        toast.info("ไม่มีการเปลี่ยนแปลงข้อมูล");
       }
     } catch (error) {
       toast.error("ไม่สามารถบันทึกข้อมูลได้");
@@ -390,19 +405,6 @@ const Profile = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* ส่วนอัพโหลดรูปภาพ */}
-            <div className="mt-8 space-y-6">
-              <div className="flex items-center space-x-2">
-                <Image className="w-5 h-5 text-[#212329]" />
-                <h3 className="text-lg font-semibold text-[#212329]">
-                  รูปภาพร้านค้า
-                </h3>
-              </div>
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
-                <UploadFile form={form} setForm={setForm} />
               </div>
             </div>
 
