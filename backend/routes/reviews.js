@@ -408,7 +408,11 @@ router.get("/reported", authenticateUser, adminCheck, async (req, res) => {
   try {
     const reviews = await prisma.review.findMany({
       where: {
-        status: "pending", 
+        OR: [
+          { status: "pending" },
+          { reported: true },
+          { ReviewReport: { some: {} } }  // มี report อย่างน้อย 1 report
+        ]
       },
       include: {
         user: {
@@ -417,19 +421,25 @@ router.get("/reported", authenticateUser, adminCheck, async (req, res) => {
         shop: {
           select: { name: true }
         },
-        ReviewReport: true, 
-        ReviewLike: true
+        ReviewReport: {
+          select: {
+            id: true,
+            reason: true
+          }
+        }
       },
       orderBy: {
         createdAt: "desc"
       }
     });
 
-    // เพิ่มการตรวจสอบก่อนเข้าถึง length
     const reviewsWithReportCount = reviews.map(review => ({
       ...review,
-      reportCount: review.ReviewReport ? review.ReviewReport.length : 0, 
-      reported: review.ReviewReport && review.ReviewReport.length > 0
+      reportCount: review.ReviewReport.length,
+      reported: review.reported || review.ReviewReport.length > 0,
+      reason: review.ReviewReport.length > 0 
+        ? review.ReviewReport[0].reason 
+        : "Multiple reports"
     }));
 
     res.json(reviewsWithReportCount);
