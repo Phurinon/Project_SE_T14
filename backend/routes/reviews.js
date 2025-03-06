@@ -417,7 +417,10 @@ router.get("/reported", authenticateUser, adminCheck, async (req, res) => {
         OR: [
           { reported: true },
           { ReviewReport: { some: {} } }
-        ]
+        ],
+        AND:{
+          status: { not: "rejected" }
+        }
       },
       include: {
         user: {

@@ -92,7 +92,7 @@ export default function Content() {
         });
       } else {
         await fetchReportedContent();
-        toast.error("ปฏิเสธรีวิว", {
+        toast.error("ปฏิเสธการรายงาน", {
           icon: <XCircle className="text-red-500" />,
         });
       }
@@ -206,7 +206,7 @@ export default function Content() {
                     onClick={() => handleModeration(item.id, "reject")}
                   >
                     <Trash2 className="w-5 h-5" />
-                    ลบ
+                    ปฏิเสธการรายงาน
                   </button>
                 </div>
               </div>
