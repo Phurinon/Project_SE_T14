@@ -2,8 +2,6 @@ const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const cors = require("cors");
-const passport = require("./config/passport");
-const session = require("express-session");
 
 const authRoutes = require("./routes/auth.js");
 const userRoutes = require("./routes/users.js");
@@ -21,24 +19,8 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.use(
-  cors({
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Authorization", "Content-Type"],
-    credentials: true,
-  })
+  cors()
 );
-
-app.use(
-  session({
-    secret: process.env.GOOGLE_CLIENT_SECRET,
-    resave: false,
-    saveUninitialized: true,
-  })
-);
-
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Routes
 app.use("/api/auth", authRoutes);

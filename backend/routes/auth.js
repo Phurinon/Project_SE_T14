@@ -2,8 +2,6 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/prisma.js");
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 const {
   authenticateUser,
@@ -12,92 +10,7 @@ const {
 } = require("../middleware/auth.js");
 const router = express.Router();
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // ตรวจสอบข้อมูล profile
-        if (!profile || !profile.id || !profile.emails || !profile.emails[0]) {
-          return done(new Error("Invalid Google profile"), null);
-        }
 
-        const email = profile.emails[0].value;
-        
-        // ค้นหาหรือสร้าง UserGoogle
-        let userGoogle = await prisma.userGoogle.findUnique({
-          where: { googleId: profile.id }
-        });
-
-        if (!userGoogle) {
-          // สร้าง UserGoogle ใหม่
-          userGoogle = await prisma.userGoogle.create({
-            data: {
-              googleId: profile.id,
-              email: email,
-              name: profile.displayName || ''
-            }
-          });
-
-          // สร้าง User หลักใน table User
-          await prisma.user.create({
-            data: {
-              name: profile.displayName || '',
-              email: email,
-              password: '', // Google login ไม่ต้องมี password
-              role: 'user',
-              status: 'active'
-            }
-          });
-        }
-
-        return done(null, userGoogle);
-      } catch (err) {
-        console.error("Google Authentication Error:", err);
-        return done(err, null);
-      }
-    }
-  )
-);
-
-// เริ่มกระบวนการ login ด้วย Google
-router.get(
-  "/google",
-  passport.authenticate("google", { 
-    scope: ["profile", "email"] 
-  })
-);
-
-// Callback หลังจาก Google ยืนยันตัวตนสำเร็จ
-router.get(
-  "/google/callback",
-  passport.authenticate("google", { 
-    failureRedirect: "/login" 
-  }),
-  (req, res) => {
-    try {
-      // สร้าง Token สำหรับผู้ใช้
-      const token = jwt.sign(
-        { 
-          id: req.user.id, 
-          email: req.user.email 
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
-      );
-
-      // Redirect ไปยัง Frontend พร้อมส่ง Token
-      res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
-    } catch (error) {
-      console.error("Token Generation Error:", error);
-      res.redirect("/login");
-    }
-  }
-);
 
 // Logout
 router.get("/logout", (req, res) => {

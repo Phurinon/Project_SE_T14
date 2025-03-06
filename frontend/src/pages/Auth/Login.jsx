@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import useDusthStore from "../../Global Store/DusthStore";
 import { toast } from "react-toastify";
-// import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-// import { jwtDecode } from "jwt-decode";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,31 +19,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get("token");
-
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem("token", token);
-      alert("Login successful!");
-    }
-  }, [token]);
-
-  const googleLogin = () => {
-    window.location.href = "http://localhost:3000/api/auth/google";
-  };
-
-  // Google Login Handler
-  const responseGoogle = (response) => {
-    console.log(response);
-    toast.success("เข้าสู่ระบบด้วย Google สำเร็จ");
-    // Send the response to your backend for further processing
-  };
 
   const handleOnChange = (e) => {
     setFormData({
@@ -215,55 +192,6 @@ export default function Login() {
             </button>
           </div>
         </form>
-
-        {/* Divider */}
-        <div className="mt-6 relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-600"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-800 text-gray-400">
-              หรือเข้าสู่ระบบด้วย
-            </span>
-          </div>
-        </div>
-
-        {/* Social login */}
-        <div className="mt-6">
-          {/* <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
-            <GoogleLogin
-              onSuccess={responseGoogle}
-              onError={() => toast.error("เข้าสู่ระบบด้วย Google ล้มเหลว")}
-              render={(renderProps) => (
-                <button
-                  onClick={renderProps.onClick}
-                  disabled={renderProps.disabled}
-                  className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-600 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                >
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-                    alt="Google Logo"
-                    className="w-5 h-5"
-                  />
-                  <span>เข้าสู่ระบบด้วย Google</span>
-                </button>
-              )}
-            />
-          </GoogleOAuthProvider> */}
-          <button
-            onClick={googleLogin}
-            onSuccess={(responseGoogle) => {
-              navigate("/user");
-            }}
-          >
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-              alt="Google Logo"
-              className="w-5 h-5"
-            />
-            <span>เข้าสู่ระบบด้วย Google</span>
-          </button>
-        </div>
       </div>
     </div>
   );
