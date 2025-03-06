@@ -3,7 +3,7 @@ const axios = require("axios");
 
 const router = express.Router();
 
-const API_KEY = "54ac3a71b986923a033a0f3ce8b41a8d";
+const API_KEY = process.env.AIR_API_KEY;
 const BASE_URL = "http://api.openweathermap.org/data/2.5/air_pollution";
 
 router.get("/air-pollution", async (req, res) => {
