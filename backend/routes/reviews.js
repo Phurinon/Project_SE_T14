@@ -510,12 +510,43 @@ router.put("/:id/moderate", authenticateUser, adminCheck, async (req, res) => {
         return { message: "Review has been approved and deleted" };
       }
 
-      // If status is rejected, update the review status
+      // If status is rejected, update the review status and clear reports
+      if (status === "rejected") {
+        // Delete related ReviewReport records
+        await prisma.reviewReport.deleteMany({
+          where: { reviewId: reviewId }
+        });
+
+        // Update the review to be no longer reported
+        const moderatedReview = await prisma.review.update({
+          where: { id: reviewId },
+          data: {
+            status,
+            reported: false, // Changed from true to false
+          },
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              }
+            },
+            shop: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        });
+
+        return moderatedReview;
+      }
+
+      // For other statuses (pending, etc.)
       const moderatedReview = await prisma.review.update({
         where: { id: reviewId },
         data: {
           status,
-          reported: status === "rejected",
         },
         include: {
           user: {
